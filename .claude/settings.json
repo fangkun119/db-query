@@ -1,0 +1,5 @@
+{
+  "env": {
+    "VIRTUAL_ENV": ".venv"
+  }
+}
