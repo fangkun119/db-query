@@ -1,50 +1,107 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version change: (initial) → 1.0.0
+Rationale: Initial constitution establishment for db-query demo project
+
+Modified principles: N/A (initial creation)
+
+Added sections:
+- Core Principles (3 principles)
+- Technical Constraints (4 constraints)
+- Governance (2 rules)
+
+Removed sections: N/A
+
+Templates requiring updates:
+- ✅ plan-template.md - Constitution Check section verified compatible
+- ✅ spec-template.md - No principle-specific references to update
+- ✅ tasks-template.md - Task categorization verified compatible
+- ✅ checklist-template.md - No constitution references to update
+
+Follow-up TODOs: None
+-->
+
+# DB-Query Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Demo-First Access
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Principle**: During the demo phase, no authentication is required. All users can access the system freely.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: This is a demo project focused on rapid development and user feedback. Removing authentication barriers allows faster iteration and easier testing.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+---
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Python Ergonomics
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Principle**: Backend code MUST follow ergonomic Python patterns, emphasizing readability and maintainability.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+**Rationale**: Python's strength lies in its readability. Ergonomic patterns ensure the codebase remains approachable and maintainable, especially important for a demo that may evolve into a production system.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+---
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Type Safety Frontend
+
+**Principle**: Frontend code MUST use TypeScript with strict type checking. Type-safe solutions are always preferred over alternatives.
+
+**Rationale**: Type safety catches errors at compile time rather than runtime, reducing bugs and improving maintainability. For a demo that may scale, this foundation is critical.
+
+---
+
+## Technical Constraints
+
+### Backend Stack
+
+- **Language**: Python with UV package manager
+- **Style**: Ergonomic Python - idiomatic, readable, maintainable code
+- **Data Modeling**: ALL core data structures MUST be defined via Pydantic models. Scattered dictionaries are prohibited.
+
+**Rationale**: Pydantic provides validation, serialization, and type safety in one package. Banning scattered dictionaries ensures consistent data modeling throughout the backend.
+
+---
+
+### Frontend Stack
+
+- **Language**: TypeScript (strict mode)
+- **Style**: Prioritize type-safe and maintainable solutions
+- **API Integration**: Frontend request/response structures MUST strictly align with backend contracts
+
+**Rationale**: Strict alignment between frontend and backend contracts prevents type mismatches and reduces integration bugs.
+
+---
+
+### API Contract Standards
+
+- **JSON Format**: ALL backend responses to frontend MUST use CamelCase property names
+- **Contract Alignment**: Frontend input/output structures MUST strictly match backend Pydantic model definitions
+
+**Rationale**: CamelCase is the JavaScript/TypeScript convention, while Python typically uses snake_case. This standard creates a clear contract boundary: backend uses snake_case internally, exports CamelCase to frontend.
+
+---
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Policy
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- This is a **demo project**. Principles may be adjusted at any time as project needs evolve.
+- When principles change, update this constitution and increment the version number.
+
+**Rationale**: Demo projects require flexibility. The constitution should guide, not constrain, rapid iteration.
+
+---
+
+### Code Review Priority
+
+When reviewing code or changes, prioritize in this order:
+
+1. **Security and Correctness** - Is the code safe? Does it work as specified?
+2. **Performance** - Is it performant enough for demo purposes?
+3. **Code Style** - Does it follow project conventions?
+
+**Rationale**: For a demo, correctness and safety are non-negotiable. Performance matters but can be optimized later. Style is important but should not block progress.
+
+---
+
+**Version**: 1.0.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-04-26
