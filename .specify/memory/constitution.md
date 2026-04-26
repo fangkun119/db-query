@@ -1,50 +1,139 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version change: [INITIAL] → 1.0.0
+- Modified principles: N/A (initial version)
+- Added sections: All sections (initial constitution)
+- Removed sections: N/A
+- Templates requiring updates:
+  - ✅ plan-template.md (Constitution Check section compatible)
+  - ✅ spec-template.md (no constitution-specific references)
+  - ✅ tasks-template.md (task categorization aligned with principles)
+- Follow-up TODOs: None
+-->
+
+# Database Query Tool Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. PostgreSQL-First Database Support
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Principle**: The system MUST prioritize PostgreSQL support while maintaining extensibility for future database types.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- PostgreSQL is the primary supported database type for version 1.0
+- Metadata extraction MUST use PostgreSQL-specific system catalog queries
+- Architecture MUST include extension points for additional database types (MySQL, etc.)
+- No generic database abstraction layer in initial version
+- Database-specific logic MUST be isolated for future extraction
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: Focusing on PostgreSQL ensures robust implementation rather than shallow multi-database support. Extension points allow future database types without premature abstraction.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. SQL Validation and Safety
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Principle**: All user-provided SQL MUST be validated for syntax correctness and restricted to read-only operations.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Every SQL query MUST be parsed using sqlglot before execution
+- Only SELECT statements are permitted; INSERT/UPDATE/DELETE/ALTER/DROP MUST be rejected
+- Syntax errors MUST return clear, actionable error messages to users
+- Queries without explicit LIMIT clauses MUST automatically have LIMIT 1000 appended
+- Default limit MUST be user-configurable
+- Results from auto-limited queries MUST include notification "仅显示前 1000 行"
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+**Rationale**: Prevents accidental or malicious data modification while maintaining usability. Auto-limiting protects against large result sets that could degrade performance.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. LLM-Assisted Query Generation with Context
+
+**Principle**: Natural language to SQL conversion MUST be grounded in actual database schema metadata.
+
+- LLM MUST receive structured table and view metadata as context for query generation
+- Metadata MUST include: table names, column names, data types, relationships
+- System MUST cache metadata to avoid repeated database introspection
+- Metadata refresh MUST be manual (no automatic refresh in v1.0)
+- Users MUST be able to trigger metadata refresh on demand
+- Generated SQL MUST still pass through sqlglot validation (Principle II)
+
+**Rationale**: Schema context prevents hallucination and generates queries that actually work. Manual refresh gives users control over when metadata updates occur.
+
+### IV. Demo-Grade Simplicity
+
+**Principle**: Technology and architecture choices MUST prioritize simplicity and rapid development over production-grade concerns.
+
+- SQLite for local storage (connections and metadata); no external database service
+- No authentication or authorization in v1.0; open access
+- Single-user assumption; no concurrent user concerns
+- Error handling focuses on developer clarity over production robustness
+- Deployment is local development only; no containerization or cloud deployment
+
+**Rationale**: Enables rapid prototyping and feature validation without operational overhead. Keeps focus on core query functionality rather than infrastructure.
+
+### V. Structured API Integration
+
+**Principle**: Backend and frontend MUST communicate through well-defined JSON APIs with explicit contracts.
+
+- All query results MUST return as JSON
+- Error responses MUST follow consistent JSON structure with actionable messages
+- API endpoints MUST be documented for frontend integration
+- Frontend MUST handle all data presentation (tables, formatting)
+- Monaco Editor integration for SQL editing with syntax highlighting
+
+**Rationale**: Clear separation of concerns allows frontend and backend to evolve independently. JSON format enables flexible frontend presentation.
+
+## Technology Stack Constraints
+
+### Backend
+- **Language**: Python 3.12+
+- **Runtime**: uv for dependency management
+- **Framework**: FastAPI
+- **Dependencies**: sqlglot, OpenAI SDK, database drivers (psycopg3 for PostgreSQL)
+- **Storage**: SQLite local file for connections and metadata
+
+### Frontend
+- **Framework**: React
+- **UI Kit**: refine 5
+- **Styling**: Tailwind CSS
+- **Components**: Ant Design
+- **Editor**: Monaco Editor for SQL input
+
+### Architecture
+- **API Style**: RESTful JSON endpoints
+- **State Management**: To be determined during design phase
+- **Data Flow**: Backend returns JSON → Frontend renders tables
+
+## Development Standards
+
+### Code Quality
+- All SQL MUST be validated before database execution
+- Error messages MUST be user-friendly and actionable
+- Code structure MUST isolate database-specific logic for future extensibility
+- Metadata extraction logic MUST be modular and testable
+
+### Testing Strategy
+- Unit tests for SQL validation logic (sqlglot parsing)
+- Integration tests for metadata extraction from PostgreSQL
+- Manual testing for LLM query generation quality
+- No automated frontend testing required for v1.0
+
+### Documentation Requirements
+- API endpoints MUST be documented
+- Setup instructions for local development
+- Database connection format examples
+- Natural language query examples with expected SQL output
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Process
+- Constitution changes require version bump following semantic versioning
+- MAJOR: Remove or redefine principles (backward-incompatible)
+- MINOR: Add new principles or materially expand guidance
+- PATCH: Clarifications, wording improvements, non-semantic changes
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+### Compliance Review
+- All pull requests MUST verify compliance with core principles
+- Technical decisions conflicting with principles require explicit justification
+- Complexity beyond demo-grade scope MUST be flagged during review
+
+### Versioning Policy
+- Constitution version: MAJOR.MINOR.PATCH
+- This constitution v1.0.0 represents initial project governance
+- Future amendments update this section with change rationale
+
+**Version**: 1.0.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-04-26
