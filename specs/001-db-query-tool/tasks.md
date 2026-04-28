@@ -34,20 +34,20 @@
 
 ### Backend Foundation
 
-- [ ] T005 Create settings module in `backend/app/config.py` — use pydantic-settings BaseSettings with fields: openai_api_key (str), default_limit (int, default 1000), db_query_db_path (str, default ~/.db_query/db_query.db), openai_model (str, default gpt-4o), cors_origins (str, default *)
-- [ ] T006 [P] Create SQLite database setup in `backend/app/db/sqlite.py` — async engine with aiosqlite, async_sessionmaker, DatabaseConnection SQLAlchemy model matching data-model.md DDL, create_all in run_sync
-- [ ] T007 [P] Create database Pydantic models in `backend/app/models/database.py` — CreateConnectionRequest, DatabaseSummaryResponse, DatabaseDetailResponse with alias_generator=to_camel per data-model.md
-- [ ] T008 [P] Create metadata Pydantic models in `backend/app/models/metadata.py` — ColumnMetadata, TableMetadata, ColumnMetadataResponse, TableMetadataResponse with alias_generator=to_camel per data-model.md
-- [ ] T009 [P] Create query Pydantic models in `backend/app/models/query.py` — QueryRequest, NaturalQueryRequest, QueryResultResponse, NLQueryResponse with alias_generator=to_camel per data-model.md
-- [ ] T010 Create FastAPI app skeleton in `backend/app/main.py` — CORS middleware (allow_origins=["*"], allow_credentials=False), lifespan with SQLite table creation, include v1 router prefix
+- [X] T005 Create settings module in `backend/app/config.py` — use pydantic-settings BaseSettings with fields: openai_api_key (str), default_limit (int, default 1000), db_query_db_path (str, default ~/.db_query/db_query.db), openai_model (str, default gpt-4o), cors_origins (str, default *)
+- [X] T006 [P] Create SQLite database setup in `backend/app/db/sqlite.py` — async engine with aiosqlite, async_sessionmaker, DatabaseConnection SQLAlchemy model matching data-model.md DDL, create_all in run_sync
+- [X] T007 [P] Create database Pydantic models in `backend/app/models/database.py` — CreateConnectionRequest, DatabaseSummaryResponse, DatabaseDetailResponse with alias_generator=to_camel per data-model.md
+- [X] T008 [P] Create metadata Pydantic models in `backend/app/models/metadata.py` — ColumnMetadata, TableMetadata, ColumnMetadataResponse, TableMetadataResponse with alias_generator=to_camel per data-model.md
+- [X] T009 [P] Create query Pydantic models in `backend/app/models/query.py` — QueryRequest, NaturalQueryRequest, QueryResultResponse, NLQueryResponse with alias_generator=to_camel per data-model.md
+- [X] T010 Create FastAPI app skeleton in `backend/app/main.py` — CORS middleware (allow_origins=["*"], allow_credentials=False), lifespan with SQLite table creation, include v1 router prefix
 
 ### Frontend Foundation
 
-- [ ] T011 [P] Create TypeScript interfaces in `frontend/src/types/index.ts` — match all API contracts: DatabaseSummary, DatabaseDetail, TableMeta, ColumnMeta, QueryResult, NLQueryResponse, QueryRequest, NaturalQueryRequest
-- [ ] T012 [P] Create API client in `frontend/src/services/api.ts` — axios instance with baseURL /api/v1, export typed functions: listDbs, addDb, getDb, deleteDb, refreshDb, executeQuery, naturalQuery
-- [ ] T013 [P] Create refine data provider in `frontend/src/providers/data-provider.tsx` — map getList→GET /dbs, getOne→GET /dbs/{name}, create→PUT /dbs/{name}, deleteOne→DELETE /dbs/{name}, custom→query/natural endpoints
-- [ ] T014 [P] Create IDE-style app layout in `frontend/src/components/layout/app-layout.tsx` — fixed left sidebar (DB list + schema tree) and main area (editor + results), using Tailwind flexbox per plan.md D4
-- [ ] T015 Create refine app entry in `frontend/src/App.tsx` and `frontend/src/main.tsx` — setup Refine with data provider, routerProvider, Ant Design layout, route definitions for / and /dbs/:name
+- [X] T011 [P] Create TypeScript interfaces in `frontend/src/types/index.ts` — match all API contracts: DatabaseSummary, DatabaseDetail, TableMeta, ColumnMeta, QueryResult, NLQueryResponse, QueryRequest, NaturalQueryRequest
+- [X] T012 [P] Create API client in `frontend/src/services/api.ts` — axios instance with baseURL /api/v1, export typed functions: listDbs, addDb, getDb, deleteDb, refreshDb, executeQuery, naturalQuery
+- [X] T013 [P] Create refine data provider in `frontend/src/providers/data-provider.tsx` — map getList→GET /dbs, getOne→GET /dbs/{name}, create→PUT /dbs/{name}, deleteOne→DELETE /dbs/{name}, custom→query/natural endpoints
+- [X] T014 [P] Create IDE-style app layout in `frontend/src/components/layout/app-layout.tsx` — fixed left sidebar (DB list + schema tree) and main area (editor + results), using Tailwind flexbox per plan.md D4
+- [X] T015 Create refine app entry in `frontend/src/App.tsx` and `frontend/src/main.tsx` — setup Refine with data provider, routerProvider, Ant Design layout, route definitions for / and /dbs/:name
 
 **Checkpoint**: Foundation ready — both servers start, API health check works, frontend renders empty layout
 
