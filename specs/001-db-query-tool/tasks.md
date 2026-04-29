@@ -61,15 +61,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T016 [P] [US1] Create connection service in `backend/app/services/connection.py` — add_connection (validate postgresql:// prefix, test connection, store to SQLite), list_connections, get_connection, delete_connection; use NullPool async engines per research.md R1
-- [ ] T017 [P] [US1] Create metadata service in `backend/app/services/metadata.py` — fetch_metadata: query information_schema.tables JOIN columns, filter out pg_catalog/information_schema schemas, group into TableMetadata/ColumnMetadata, serialize to JSON; parse_metadata: deserialize JSON to response models
-- [ ] T018 [US1] Create database API endpoints in `backend/app/api/v1/databases.py` — PUT /dbs/{name} (add), GET /dbs (list), GET /dbs/{name} (detail with metadata), DELETE /dbs/{name}, POST /dbs/{name}/refresh; error responses per contracts/api.md with Chinese detail messages
-- [ ] T019 [US1] Wire database router into FastAPI app in `backend/app/main.py` — include API router with prefix /api/v1
-- [ ] T020 [P] [US1] Create database list component in `frontend/src/components/database/database-list.tsx` — Ant Design List showing connections with name, status badge, table/view counts, last refreshed time, delete button with confirm
-- [ ] T021 [P] [US1] Create database form component in `frontend/src/components/database/database-form.tsx` — Ant Design Modal with Input for connection name and Input for PostgreSQL URL, submit calls addDb, error display for connection failures
-- [ ] T022 [P] [US1] Create schema tree component in `frontend/src/components/schema/schema-tree.tsx` — Ant Design DirectoryTree displaying tables/views grouped by schema, expand to show column name, data type, nullable badge
-- [ ] T023 [US1] Create databases list page in `frontend/src/pages/databases.tsx` — render DatabaseList component, "添加数据库" button opening DatabaseForm modal, navigation to detail page on click
-- [ ] T024 [US1] Create database detail page in `frontend/src/pages/database-detail.tsx` — left panel with SchemaTree, refresh metadata button, connection status display; main area reserved for query editor (US2)
+- [X] T016 [P] [US1] Create connection service in `backend/app/services/connection.py` — add_connection (validate postgresql:// prefix, test connection, store to SQLite), list_connections, get_connection, delete_connection; use NullPool async engines per research.md R1
+- [X] T017 [P] [US1] Create metadata service in `backend/app/services/metadata.py` — fetch_metadata: query information_schema.tables JOIN columns, filter out pg_catalog/information_schema schemas, group into TableMetadata/ColumnMetadata, serialize to JSON; parse_metadata: deserialize JSON to response models
+- [X] T018 [US1] Create database API endpoints in `backend/app/api/v1/databases.py` — PUT /dbs/{name} (add), GET /dbs (list), GET /dbs/{name} (detail with metadata), DELETE /dbs/{name}, POST /dbs/{name}/refresh; error responses per contracts/api.md with Chinese detail messages
+- [X] T019 [US1] Wire database router into FastAPI app in `backend/app/main.py` — include API router with prefix /api/v1
+- [X] T020 [P] [US1] Create database list component in `frontend/src/components/database/database-list.tsx` — Ant Design List showing connections with name, status badge, table/view counts, last refreshed time, delete button with confirm
+- [X] T021 [P] [US1] Create database form component in `frontend/src/components/database/database-form.tsx` — Ant Design Modal with Input for connection name and Input for PostgreSQL URL, submit calls addDb, error display for connection failures
+- [X] T022 [P] [US1] Create schema tree component in `frontend/src/components/schema/schema-tree.tsx` — Ant Design DirectoryTree displaying tables/views grouped by schema, expand to show column name, data type, nullable badge
+- [X] T023 [US1] Create databases list page in `frontend/src/pages/databases.tsx` — render DatabaseList component, "添加数据库" button opening DatabaseForm modal, navigation to detail page on click
+- [X] T024 [US1] Create database detail page in `frontend/src/pages/database-detail.tsx` — left panel with SchemaTree, refresh metadata button, connection status display; main area reserved for query editor (US2)
 
 **Checkpoint**: User Story 1 complete — can add/delete connections, browse schema metadata, refresh metadata. Fully testable end-to-end.
 

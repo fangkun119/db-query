@@ -112,4 +112,46 @@ cd backend && uv run uvicorn app.main:app --reload --port 8000
 cd frontend && npm run dev
 确认两个服务都能正常启动后，再进入 Phase 3（User Story 1 - 数据库连接和元数据浏览器）。
 
+## 3. Phase 3 工作接话
+
+### Phase 3 功能概览：User Story 1 - 数据库连接和元数据浏览器
+
+| 维度 | 内容 |
+|------|------|
+| **目标** | 用户可以添加 PostgreSQL 连接，查看表和视图的元数据结构 |
+| **优先级** | P1 - 所有功能的依赖基础 |
+| **任务数** | 9 个 (T016-T024) |
+
+#### 后端任务 (5个)
+
+| 任务 | 文件 | 功能 |
+|------|------|------|
+| T016 | services/connection.py | 连接管理：添加/列表/获取/删除连接，验证 postgresql:// 前缀 |
+| T017 | services/metadata.py | 元数据服务：查询 information_schema，过滤系统 schema，序列化为 JSON |
+| T018 | api/v1/databases.py | API 端点：PUT /dbs/{name}, GET /dbs, GET /dbs/{name}, DELETE, POST /dbs/{name}/refresh |
+| T019 | main.py | 将数据库路由注册到 FastAPI |
+| T006 | db/sqlite.py | 已在 Phase 2 完成 |
+
+#### 前端任务 (4个)
+
+| 任务 | 文件 | 功能 |
+|------|------|------|
+| T020 | components/database/database-list.tsx | 连接列表组件：显示名称、状态徽章、表/视图数、删除按钮 |
+| T021 | components/database/database-form.tsx | 添加连接表单：连接名称输入、PostgreSQL URL 输入 |
+| T022 | components/schema/schema-tree.tsx | 元数据树组件：Ant Design DirectoryTree 显示表/视图和列信息 |
+| T023 | pages/databases.tsx | 数据库列表页："添加数据库"按钮，点击跳转详情页 |
+| T024 | pages/database-detail.tsx | 数据库详情页：左侧 SchemaTree，主区域为查询编辑器预留 |
+
+#### 验收标准
+
+| 场景 | 预期结果 |
+|------|----------|
+| 添加有效 PostgreSQL 连接 | 连接成功并存储，显示在列表中 |
+| 查看数据库详情 | 显示所有表和视图，点击查看列信息（名称、类型、可空） |
+| 手动刷新元数据 | 重新获取并更新显示 |
+| 无效连接 URL | 显示明确错误信息 |
+| 删除连接 | 从列表中移除 |
+
+**Phase 3 完成后**：可以完整管理数据库连接并浏览元数据，为 Phase 4 (SQL 查询) 打下基础。
+
 

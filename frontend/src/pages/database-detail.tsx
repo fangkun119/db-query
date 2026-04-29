@@ -1,0 +1,155 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router';
+import { Card, Button, Space, Typography, Tag, Spin, message, Row, Col } from 'antd';
+import { ArrowLeftOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
+import SchemaTree from '../components/schema/schema-tree';
+import type { DatabaseDetail } from '../types';
+import { getDb, refreshDb } from '../services/api';
+
+const { Title, Text } = Typography;
+
+export const DatabaseDetailPage: React.FC = () => {
+  const { name } = useParams<{ name: string }>();
+  const navigate = useNavigate();
+  const [database, setDatabase] = useState<DatabaseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadDatabase = async () => {
+    if (!name) return;
+
+    setLoading(true);
+    try {
+      const data = await getDb(name);
+      setDatabase(data);
+    } catch (error: any) {
+      message.error(`加载数据库失败：${error.response?.data?.detail || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDatabase();
+  }, [name]);
+
+  const handleRefresh = async () => {
+    if (!name) return;
+
+    setRefreshing(true);
+    try {
+      const data = await refreshDb(name);
+      setDatabase(data);
+      message.success('元数据已刷新');
+    } catch (error: any) {
+      message.error(`刷新失败：${error.response?.data?.detail || error.message}`);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleBack = () => {
+    navigate('/dbs');
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!database) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <Text type="secondary">数据库不存在</Text>
+      </div>
+    );
+  }
+
+  const statusConfig: Record<string, { color: string; text: string }> = {
+    active: { color: 'success', text: '活跃' },
+    error: { color: 'error', text: '错误' },
+  };
+
+  const statusInfo = statusConfig[database.status] || { color: 'default', text: database.status };
+
+  return (
+    <div style={{ padding: '24px', height: 'calc(100vh - 48px)' }}>
+      <Row gutter={16} style={{ height: '100%' }}>
+        {/* Left Sidebar - Schema Tree */}
+        <Col span={6} style={{ height: '100%', overflow: 'auto' }}>
+          <Card
+            title={
+              <Space>
+                <DatabaseOutlined />
+                <Text ellipsis style={{ maxWidth: '150px' }}>
+                  {database.name}
+                </Text>
+              </Space>
+            }
+            extra={
+              <Button
+                type="text"
+                icon={<ReloadOutlined spin={refreshing} />}
+                onClick={handleRefresh}
+                loading={refreshing}
+                size="small"
+              />
+            }
+            bodyStyle={{ padding: '8px', maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}
+            style={{ height: '100%' }}
+          >
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Space size="small">
+                <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {database.dbType}
+                </Text>
+              </Space>
+
+              <SchemaTree tables={database.tables} loading={refreshing} />
+            </Space>
+          </Card>
+        </Col>
+
+        {/* Main Area - Reserved for Query Editor (US2) */}
+        <Col span={18} style={{ height: '100%' }}>
+          <Card
+            title={
+              <Space>
+                <Button
+                  type="text"
+                  icon={<ArrowLeftOutlined />}
+                  onClick={handleBack}
+                />
+                <Title level={4} style={{ margin: 0 }}>
+                  查询编辑器
+                </Title>
+              </Space>
+            }
+            style={{ height: '100%' }}
+            bodyStyle={{
+              height: 'calc(100% - 60px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Space direction="vertical" align="center">
+              <Text type="secondary" style={{ fontSize: '16px' }}>
+                SQL 查询功能即将在 User Story 2 中实现
+              </Text>
+              <Text type="secondary" style={{ fontSize: '14px' }}>
+                当前可以浏览数据库模式结构
+              </Text>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+};
+
+export default DatabaseDetailPage;
