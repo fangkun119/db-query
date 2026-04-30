@@ -16,7 +16,7 @@
     "@refinedev/core": "^5.0.12",
     "@refinedev/react-router": "^2.0.4",
     "@tailwindcss/vite": "^4.2.4",
-    "antd": "^5.29.3",
+    "antd": "^6.3.7",
     "axios": "^1.15.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -38,6 +38,7 @@
   },
   "overrides": {
     "dompurify": "^3.3.4",
-    "path-to-regexp": "^8.3.1"
+    "path-to-regexp": "^8.3.1",
+    "antd": "^6.3.7"
   }
 }

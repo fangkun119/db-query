@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Space, Typography, message, Spin } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import DatabaseList from '../components/database/database-list';
 import DatabaseForm from '../components/database/database-form';
 import type { DatabaseSummary } from '../types';
@@ -10,7 +10,6 @@ import { listDbs, deleteDb } from '../services/api';
 const { Title } = Typography;
 
 export const DatabasesPage: React.FC = () => {
-  const navigate = useNavigate();
   const [databases, setDatabases] = useState<DatabaseSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -42,7 +41,7 @@ export const DatabasesPage: React.FC = () => {
   };
 
   const handleClick = (name: string) => {
-    navigate(`/dbs/${encodeURIComponent(name)}`);
+    window.location.href = `/dbs/${encodeURIComponent(name)}`;
   };
 
   const handleAddSuccess = () => {
@@ -50,9 +49,9 @@ export const DatabasesPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
       <Card>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
           <Space style={{ width: '100%', justifyContent: 'space-between' }}>
             <Title level={3} style={{ margin: 0 }}>数据库连接</Title>
             <Space>
@@ -78,7 +77,7 @@ export const DatabasesPage: React.FC = () => {
               <Spin size="large" />
             </div>
           ) : databases.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
+            <div style={{ textAlign: 'center', padding: '40px', color: '#8c8c8c' }}>
               暂无数据库连接，点击上方"添加数据库"按钮添加第一个连接
             </div>
           ) : (

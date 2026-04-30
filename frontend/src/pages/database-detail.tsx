@@ -101,7 +101,7 @@ export const DatabaseDetailPage: React.FC = () => {
             bodyStyle={{ padding: '8px', maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}
             style={{ height: '100%' }}
           >
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Space orientation="vertical" size="small" style={{ width: '100%' }}>
               <Space size="small">
                 <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
                 <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -137,7 +137,7 @@ export const DatabaseDetailPage: React.FC = () => {
               justifyContent: 'center',
             }}
           >
-            <Space direction="vertical" align="center">
+            <Space orientation="vertical" align="center">
               <Text type="secondary" style={{ fontSize: '16px' }}>
                 SQL 查询功能即将在 User Story 2 中实现
               </Text>

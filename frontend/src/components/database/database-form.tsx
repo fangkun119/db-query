@@ -104,7 +104,7 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
         </Form.Item>
 
         <Form.Item>
-          <Space direction="vertical" size="small">
+          <Space orientation="vertical" size="small">
             <Text type="secondary" style={{ fontSize: '12px' }}>
               提示：
             </Text>

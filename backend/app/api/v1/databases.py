@@ -6,7 +6,13 @@ from app.services.connection import ConnectionService
 from app.services.metadata import MetadataService
 
 
-router = APIRouter()
+router = APIRouter(prefix="/dbs")
+
+
+@router.get("", response_model=list[DatabaseSummaryResponse])
+async def list_databases() -> list[DatabaseSummaryResponse]:
+    """List all database connections."""
+    return await ConnectionService.list_connections()
 
 
 @router.put("/{name}", response_model=DatabaseSummaryResponse, status_code=status.HTTP_201_CREATED)
@@ -23,12 +29,6 @@ async def add_database(name: str, request: CreateConnectionRequest) -> DatabaseS
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
     return response
-
-
-@router.get("", response_model=list[DatabaseSummaryResponse])
-async def list_databases() -> list[DatabaseSummaryResponse]:
-    """List all database connections."""
-    return await ConnectionService.list_connections()
 
 
 @router.get("/{name}", response_model=DatabaseDetailResponse)

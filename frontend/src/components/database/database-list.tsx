@@ -71,7 +71,7 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete,
                 </Space>
               }
               description={
-                <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <Space orientation="vertical" size="small" style={{ width: '100%' }}>
                   <Text type="secondary">{db.dbType}</Text>
                   <Space>
                     <Badge count={db.tableCount} showZero color="blue" />

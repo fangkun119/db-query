@@ -190,22 +190,22 @@ class MetadataService:
                 # Use cached metadata
                 metadata_list = MetadataService._parse_metadata(conn.metadata_json)
 
-            # Convert to response format
+            # Convert to response format (as dicts)
             tables = [
-                TableMetadataResponse(
-                    schema_name=table.schema_name,
-                    table_name=table.table_name,
-                    table_type=table.table_type,
-                    columns=[
-                        ColumnMetadataResponse(
-                            name=col.name,
-                            data_type=col.data_type,
-                            is_nullable=col.is_nullable,
-                            default_value=col.default_value
-                        )
+                {
+                    "schema_name": table.schema_name,
+                    "table_name": table.table_name,
+                    "table_type": table.table_type,
+                    "columns": [
+                        {
+                            "name": col.name,
+                            "data_type": col.data_type,
+                            "is_nullable": col.is_nullable,
+                            "default_value": col.default_value
+                        }
                         for col in table.columns
                     ]
-                )
+                }
                 for table in metadata_list
             ]
 
