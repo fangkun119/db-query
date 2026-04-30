@@ -1,3 +1,6 @@
+# MAC temp-file
+**/.DS_Store
+
 # PlayWright Temp Files
 .playwright-cli/
 .playwright-mcp/

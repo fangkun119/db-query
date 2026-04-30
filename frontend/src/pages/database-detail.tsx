@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router';
 import { Card, Button, Space, Typography, Tag, Skeleton, message, Row, Col } from 'antd';
 import { ArrowLeftOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import SchemaTree from '../components/schema/schema-tree';
-import type { DatabaseDetail } from '../types';
-import { getDb, refreshDb } from '../services/api';
+import { SqlEditor } from '../components/editor';
+import { ResultTable } from '../components/results';
+import type { DatabaseDetail, QueryResult } from '../types';
+import { getDb, refreshDb, executeQuery } from '../services/api';
 
 const { Title, Text } = Typography;
 
@@ -14,6 +16,9 @@ export const DatabaseDetailPage: React.FC = () => {
   const [database, setDatabase] = useState<DatabaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sqlQuery, setSqlQuery] = useState('');
+  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  const [executingQuery, setExecutingQuery] = useState(false);
 
   const loadDatabase = useCallback(async () => {
     if (!name) return;
@@ -57,6 +62,26 @@ export const DatabaseDetailPage: React.FC = () => {
       }
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleExecuteQuery = async () => {
+    if (!name || !sqlQuery.trim()) return;
+
+    setExecutingQuery(true);
+    try {
+      const result = await executeQuery(name, { sql: sqlQuery });
+      setQueryResult(result);
+      message.success(`查询执行成功，返回 ${result.totalCount} 行`);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as { response?: { data?: { detail?: string } } };
+        message.error(`查询执行失败：${err.response?.data?.detail || 'Unknown error'}`);
+      } else {
+        message.error('查询执行失败');
+      }
+    } finally {
+      setExecutingQuery(false);
     }
   };
 
@@ -137,8 +162,9 @@ export const DatabaseDetailPage: React.FC = () => {
           </Card>
         </Col>
 
-        {/* Main Area - Reserved for Query Editor (US2) */}
-        <Col span={18} style={{ height: '100%' }}>
+        {/* Main Area - Query Editor and Results */}
+        <Col span={18} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* SQL Editor Section */}
           <Card
             title={
               <Space>
@@ -148,28 +174,35 @@ export const DatabaseDetailPage: React.FC = () => {
                   onClick={handleBack}
                 />
                 <Title level={4} style={{ margin: 0 }}>
-                  查询编辑器
+                  SQL 查询编辑器
                 </Title>
               </Space>
             }
-            style={{ height: '100%' }}
-            styles={{
-              body: {
-                height: 'calc(100% - 60px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
-            }}
+            style={{ marginBottom: '16px', flex: '0 0 auto' }}
+            styles={{ body: { padding: '16px', height: '250px' } }}
           >
-            <Space orientation="vertical" align="center">
-              <Text type="secondary" style={{ fontSize: '16px' }}>
-                SQL 查询功能即将在 User Story 2 中实现
-              </Text>
-              <Text type="secondary" style={{ fontSize: '14px' }}>
-                当前可以浏览数据库模式结构
-              </Text>
-            </Space>
+            <SqlEditor
+              value={sqlQuery}
+              onChange={setSqlQuery}
+              onExecute={handleExecuteQuery}
+              loading={executingQuery}
+              placeholder="在此输入 SQL 查询语句... 例如: SELECT * FROM test_users LIMIT 10"
+            />
+          </Card>
+
+          {/* Results Section */}
+          <Card
+            title={
+              <Space>
+                <Title level={5} style={{ margin: 0 }}>
+                  查询结果
+                </Title>
+              </Space>
+            }
+            style={{ flex: 1, overflow: 'hidden' }}
+            styles={{ body: { padding: '16px', height: 'calc(100% - 50px)' } }}
+          >
+            <ResultTable result={queryResult} loading={executingQuery} />
           </Card>
         </Col>
       </Row>

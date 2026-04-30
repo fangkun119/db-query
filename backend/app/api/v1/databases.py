@@ -2,8 +2,12 @@ from fastapi import APIRouter, HTTPException, status
 from typing import Any
 
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse, DatabaseDetailResponse
+from app.models.query import QueryRequest, QueryResultResponse
 from app.services.connection import ConnectionService
 from app.services.metadata import MetadataService
+from app.services.query import QueryService
+from app.db.sqlite import get_engine, get_async_session_maker
+from sqlalchemy import select
 
 
 router = APIRouter(prefix="/dbs")
@@ -69,3 +73,36 @@ async def refresh_database(name: str) -> DatabaseDetailResponse:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
     return response
+
+
+@router.post("/{name}/query", response_model=QueryResultResponse)
+async def execute_query(name: str, request: QueryRequest) -> QueryResultResponse:
+    """Execute a SQL query on the database.
+
+    Validates the SQL (must be SELECT), injects LIMIT if missing,
+    and returns results.
+    """
+    # Get connection URL from SQLite
+    engine = get_engine()
+    async_session_maker = get_async_session_maker()
+
+    async with engine.begin() as conn:
+        from app.db.sqlite import DatabaseConnection
+        result = await conn.execute(
+            select(DatabaseConnection).where(DatabaseConnection.name == name)
+        )
+        connection = result.first()
+
+    if not connection:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="数据库连接不存在")
+
+    # Execute query
+    result, error_msg = await QueryService.execute_query(connection.url, request)
+
+    if error_msg:
+        # Determine appropriate status code
+        if "仅支持 SELECT" in error_msg or "语法错误" in error_msg:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
+
+    return result

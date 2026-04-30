@@ -339,3 +339,120 @@ Pre-Phase 4 全部工作项已完成：
 
 **现在可以安全进入 Phase 4（SQL 查询执行器）。**
 
+
+## Phase 4 完成工作总结
+
+### Phase 4 功能概览：User Story 2 - SQL 查询执行器
+
+| 维度 | 内容 |
+|------|------|
+| **目标** | 用户可以在 Monaco 编辑器中编写 SQL，执行 SELECT 查询，查看结果表格 |
+| **优先级** | P2 - 核心查询功能 |
+| **任务数** | 6 个 (T025-T030) |
+
+### (1) 后端任务 (3个)
+
+| 任务 | 文件 | 功能 |
+|------|------|------|
+| T025 | services/validator.py | SQL 验证器：sqlglot 解析，仅允许 SELECT/UNION，自动注入 LIMIT，多语句检测 |
+| T026 | services/query.py | 查询执行器：NullPool 异步引擎，执行时间测量，结果序列化 |
+| T027 | api/v1/databases.py | POST /dbs/{name}/query 端点：连接 URL 获取，错误码映射 (400/404/502) |
+
+### (2) 前端任务 (3个)
+
+| 任务 | 文件 | 功能 |
+|------|------|------|
+| T028 | components/editor/sql-editor.tsx | Monaco 编辑器：pgsql 语法高亮，vs-dark 主题，Ctrl/Cmd+Enter 执行 |
+| T029 | components/results/result-table.tsx | 结果表格：动态列生成，分页，截断警告，执行时间显示，NULL 值高亮 |
+| T030 | pages/database-detail.tsx | 集成查询功能：双栏布局（编辑器 250px + 结果表 flex），executeQuery API 调用 |
+
+### (3) 技术实现要点
+
+#### SQL 验证器 (validator.py)
+
+| 特性 | 实现方式 |
+|------|----------|
+| 解析引擎 | sqlglot.parse_one(sql, dialect="postgres") |
+| 类型检查 | isinstance(ast, (exp.Select, exp.Union)) |
+| LIMIT 检测 | ast.args.get("limit") |
+| LIMIT 注入 | ast.set("limit", exp.Limit(expression=exp.Literal.number(1000))) |
+| 错误消息 | ParseError.errors 提取 {line, col, description}，中文翻译 |
+| 多语句检测 | 检查 ";" (除末尾外) |
+| 空输入保护 | 提前返回 ValidationError |
+
+#### 查询执行器 (query.py)
+
+| 特性 | 实现方式 |
+|------|----------|
+| 引擎配置 | create_async_engine(url, poolclass=NullPool) |
+| 结果获取 | result.mappings().all() → dict 转换 |
+| 时间测量 | time.time() * 1000，保留 2 位小数 |
+| 截断判断 | 原 SQL 无 LIMIT 时标记 is_truncated=True |
+| 错误处理 | Exception → "查询执行失败：{str(e)}" |
+
+#### Monaco 编辑器 (sql-editor.tsx)
+
+| 特性 | 配置 |
+|------|------|
+| 语言 | defaultLanguage="pgsql" |
+| 主题 | theme="vs-dark" |
+| 快捷键 | monaco.KeyMod.CtrlCmd \| monaco.KeyCode.Enter |
+| 类型安全 | editor.IStandaloneCodeEditor, monaco 类型导入 |
+| 占位符 | placeholder 多行提示文本 |
+
+### (4) 代码质量验证
+
+| 维度 | 命令 | 结果 |
+|------|------|------|
+| 后端测试 | cd backend && uv run pytest tests/ -v | 33/33 通过 (0.74s) |
+| 前端 lint | cd frontend && npm run lint | 0 errors, 0 warnings |
+| TypeScript 编译 | tsc --noEmit | 通过 |
+
+### (5) 可交付结论
+
+Phase 4 所有功能已完成并通过静态验证：
+- 后端：SQL 验证器 + 查询执行器 + API 端点
+- 前端：Monaco 编辑器 + 结果表格 + 详情页集成
+- 代码质量：测试通过、lint 通过、类型检查通过
+
+**已达到可交付程度。**
+
+### (6) 进入 Phase 5 前的建议
+
+| 选项 | 建议 | 原因 |
+|------|------|------|
+| 直接进入 Phase 5 | ⚠️ 不推荐 | Phase 4 未经过真实数据库端到端验证 |
+| 先做 E2E 测试验证 | ✅ **强烈推荐** | SQL 执行涉及动态 SQL、 LIMIT 注入、错误处理，需要实际验证 |
+
+建议在进入 Phase 5 前完成以下验证：
+
+| 优先级 | 验证项 | 工作量 | 验证方法 |
+|--------|--------|--------|----------|
+| P0 | 真实数据库 SQL 执行 | ~30min | 连接 local-postgres，执行 SELECT 查询验证结果 |
+| P0 | LIMIT 自动注入验证 | ~15min | 执行无 LIMIT 查询，检查 is_truncated=True |
+| P0 | 错误处理验证 | ~15min | 执行非法 SQL（DELETE/INSERT），验证 400 错误 |
+| P1 | 大数据集性能测试 | ~20min | 执行返回 >1000 行的查询，验证截断和响应时间 |
+| P1 | 复杂 SQL 支持 | ~20min | 测试 JOIN、子查询、UNION、CTE |
+
+推荐路径：P0 验证（1h）→ Phase 5 → P1 随 Phase 6 Polish 一起处理。
+
+**资深全栈工程师视角的建议：**
+
+Phase 4 实现了完整的 SQL 查询执行链路，但存在以下需要验证的风险点：
+
+| 风险项 | 潜在问题 | 验证必要性 |
+|--------|----------|------------|
+| sqlglot 解析边界 | PostgreSQL 特定语法（窗口函数、JSON 操作符）可能解析失败 | 高 |
+| LIMIT 注入位置 | 子查询中的 LIMIT 可能被错误覆盖 | 中 |
+| NullPool 连接泄漏 | 异常时 engine.dispose() 未执行 | 高 |
+| Monaco 类型安全 | monaco namespace 可能导致运行时错误 | 低 |
+| 结果集类型转换 | PostgreSQL 数组/JSON 类型到 Python dict 的转换 | 中 |
+
+建议优先执行 P0 验证（1小时），使用真实 PostgreSQL 数据库测试：
+- 简单 SELECT
+- 带 JOIN 的查询
+- 无 LIMIT 的查询（验证截断）
+- 非法 SQL（验证错误处理）
+
+这 1 小时的投入可以避免在 Phase 5（NL→SQL）阶段引入更难调试的问题。
+

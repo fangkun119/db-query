@@ -83,12 +83,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T025 [P] [US2] Create SQL validator service in `backend/app/services/validator.py` — validate_and_enrich: parse_one(sql), reject non-SELECT/UNION with "仅支持 SELECT 查询", detect outer LIMIT, inject default LIMIT if missing, return enriched SQL; handle ParseError with Chinese messages, empty input guard, multi-statement detection per research.md R2
-- [ ] T026 [US2] Create query execution service in `backend/app/services/query.py` — execute_query: take connection URL + SQL, call validator, execute via async engine, measure execution time, return QueryResultResponse with column names, row data, truncation flag
-- [ ] T027 [US2] Add query endpoint in `backend/app/api/v1/databases.py` — POST /dbs/{name}/query accepting QueryRequest, returns QueryResultResponse; error handling per contracts/api.md (400 for SQL errors, 404, 502)
-- [ ] T028 [P] [US2] Create SQL editor component in `frontend/src/components/editor/sql-editor.tsx` — @monaco-editor/react with language="pgsql", theme="vs-dark", value binding, execute button, keyboard shortcut for execution
-- [ ] T029 [P] [US2] Create result table component in `frontend/src/components/results/result-table.tsx` — Ant Design Table with dynamic columns from columnNames, row data from rowData, truncation warning banner "仅显示前 {defaultLimit} 行" when isTruncated, execution time display
-- [ ] T030 [US2] Integrate query execution in database detail page `frontend/src/pages/database-detail.tsx` — add SqlEditor and ResultTable to main area, wire execute button to executeQuery API, pass results to ResultTable
+- [X] T025 [P] [US2] Create SQL validator service in `backend/app/services/validator.py` — validate_and_enrich: parse_one(sql), reject non-SELECT/UNION with "仅支持 SELECT 查询", detect outer LIMIT, inject default LIMIT if missing, return enriched SQL; handle ParseError with Chinese messages, empty input guard, multi-statement detection per research.md R2
+- [X] T026 [US2] Create query execution service in `backend/app/services/query.py` — execute_query: take connection URL + SQL, call validator, execute via async engine, measure execution time, return QueryResultResponse with column names, row data, truncation flag
+- [X] T027 [US2] Add query endpoint in `backend/app/api/v1/databases.py` — POST /dbs/{name}/query accepting QueryRequest, returns QueryResultResponse; error handling per contracts/api.md (400 for SQL errors, 404, 502)
+- [X] T028 [P] [US2] Create SQL editor component in `frontend/src/components/editor/sql-editor.tsx` — @monaco-editor/react with language="pgsql", theme="vs-dark", value binding, execute button, keyboard shortcut for execution
+- [X] T029 [P] [US2] Create result table component in `frontend/src/components/results/result-table.tsx` — Ant Design Table with dynamic columns from columnNames, row data from rowData, truncation warning banner "仅显示前 {defaultLimit} 行" when isTruncated, execution time display
+- [X] T030 [US2] Integrate query execution in database detail page `frontend/src/pages/database-detail.tsx` — add SqlEditor and ResultTable to main area, wire execute button to executeQuery API, pass results to ResultTable
 
 **Checkpoint**: User Stories 1 AND 2 complete — full SQL query workflow works end-to-end
 
