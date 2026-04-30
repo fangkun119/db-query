@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.pool import NullPool
 from sqlalchemy import text
 from typing import Optional
+import asyncio
 import json
 from datetime import datetime, timezone
 
@@ -51,7 +52,7 @@ class MetadataService:
                     ORDER BY t.table_schema, t.table_name, c.ordinal_position
                 """)
 
-                result = await conn.execute(query)
+                result = await asyncio.wait_for(conn.execute(query), timeout=30)
                 rows = result.fetchall()
 
                 # Group by table
@@ -95,6 +96,8 @@ class MetadataService:
 
                 return True, "", metadata_list
 
+        except asyncio.TimeoutError:
+            return False, "获取元数据超时，请检查数据库连接状态", None
         except Exception as e:
             return False, f"获取元数据失败：{str(e)}", None
         finally:

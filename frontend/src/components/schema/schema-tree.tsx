@@ -94,7 +94,6 @@ export const SchemaTree: React.FC<SchemaTreeProps> = ({ tables, loading = false 
       showIcon
       defaultExpandAll
       treeData={treeData}
-      loading={loading}
       style={{
         backgroundColor: '#fff',
         padding: '8px',

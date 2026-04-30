@@ -55,3 +55,13 @@
 | 现象 | 浏览器报 CSP 错误阻止 `eval` 和 `telemetry.refine.dev` 图片加载 | 用户反馈两条 CSP 报错：1. `blocks the use of 'eval' in JavaScript`；2. `Loading the image 'telemetry.refine.dev' violates CSP directive` |
 | 原因 | Vite HMR 使用 `eval`；Refine 遥测加载外部图片；默认 CSP 不允许 | 1. CSP eval 错误：Vite 开发模式下 HMR 通过 `eval` 实现热更新，这在严格 CSP 下被阻止；2. 图片加载错误：Refine 默认启用遥测，向 `telemetry.refine.dev` 发送数据（通过 1px 图片），URL 不在 CSP `img-src` 白名单中；3. 检查 `vite.config.ts` 无 CSP 配置，`index.html` 也无 CSP meta 标签 |
 | 修复 | vite.config.ts 添加 `headers.Content-Security-Policy` 含 `unsafe-eval` 和 `img-src`；同时设置 `telemetry: false` 禁用遥测 | 双管齐下：1. vite.config.ts `server.headers` 添加 CSP 头，`script-src` 含 `unsafe-eval`，`img-src` 含 `telemetry.refine.dev`；2. main.tsx Refine options 添加 `telemetry: false` 从源头禁用遥测请求；重启开发服务器后 CSP 错误消失 |
+
+## Pre-Phase 4
+
+### Bug Pre-4.001 返回按钮导航到错误路由 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 数据库详情页点击返回按钮后，URL 变为 `/dbs`，页面显示 "数据库不存在" 而非列表页 | Playwright E2E 测试第 7 步：点击详情页返回按钮后，`browser_snapshot` 显示空白页面而非数据库列表；检查 URL 为 `/dbs` 而非 `/databases` |
+| 原因 | `database-detail.tsx` 第 52 行 `handleBack` 函数中 `navigate('/dbs')` 硬编码了错误路径 | 1. Playwright 点击返回按钮后检查 URL 为 `/dbs`；2. `Read database-detail.tsx` 定位到 `handleBack` → `navigate('/dbs')`；3. 对比 `main.tsx` 路由配置：列表页路由为 `/databases` 而非 `/dbs`；4. `/dbs/:name` 是详情页路由，`/dbs` 不匹配任何已注册路由，React Router 渲染空状态 |
+| 修复 | `navigate('/dbs')` → `navigate('/databases')` | 修改后 Playwright 验证：点击返回按钮 → URL 变为 `/databases` → 页面正确显示数据库列表 |

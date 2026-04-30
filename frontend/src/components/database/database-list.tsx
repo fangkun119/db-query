@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, Badge, Button, Typography, Space, Popconfirm, Tag } from 'antd';
+import { Badge, Button, Typography, Space, Popconfirm, Tag } from 'antd';
 import { DeleteOutlined, DatabaseOutlined } from '@ant-design/icons';
 import type { DatabaseSummary } from '../../types';
 
@@ -47,44 +47,49 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete,
   };
 
   return (
-    <List
-      dataSource={databases}
-      renderItem={(db) => {
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+      {databases.map((db) => {
         const statusInfo = statusConfig[db.status] || { color: 'default', text: db.status };
         const lastRefreshed = db.lastRefreshedAt
           ? formatDistanceToNow(db.lastRefreshedAt)
           : '从未刷新';
 
         return (
-          <List.Item
+          <div
             key={db.name}
             onClick={() => onClick(db.name)}
-            style={{ cursor: 'pointer', padding: '16px' }}
+            style={{
+              cursor: 'pointer',
+              padding: '16px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              borderBottom: '1px solid #f0f0f0',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fafafa'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             className="database-list-item"
           >
-            <List.Item.Meta
-              avatar={<DatabaseOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
-              title={
+            <DatabaseOutlined style={{ fontSize: '24px', color: '#1890ff', marginTop: '4px', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Space>
+                <Text strong>{db.name}</Text>
+                <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
+              </Space>
+              <Space orientation="vertical" size="small" style={{ width: '100%', marginTop: '4px' }}>
+                <Text type="secondary">{db.dbType}</Text>
                 <Space>
-                  <Text strong>{db.name}</Text>
-                  <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
+                  <Badge count={db.tableCount} showZero color="blue" />
+                  <Text type="secondary">个表</Text>
+                  <Badge count={db.viewCount} showZero color="green" />
+                  <Text type="secondary">个视图</Text>
                 </Space>
-              }
-              description={
-                <Space orientation="vertical" size="small" style={{ width: '100%' }}>
-                  <Text type="secondary">{db.dbType}</Text>
-                  <Space>
-                    <Badge count={db.tableCount} showZero color="blue" />
-                    <Text type="secondary">个表</Text>
-                    <Badge count={db.viewCount} showZero color="green" />
-                    <Text type="secondary">个视图</Text>
-                  </Space>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    最后刷新: {lastRefreshed}
-                  </Text>
-                </Space>
-              }
-            />
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  最后刷新: {lastRefreshed}
+                </Text>
+              </Space>
+            </div>
             <Popconfirm
               title="删除连接"
               description="确定要删除这个数据库连接吗？"
@@ -99,10 +104,10 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete,
                 onClick={(e) => e.stopPropagation()}
               />
             </Popconfirm>
-          </List.Item>
+          </div>
         );
-      }}
-    />
+      })}
+    </div>
   );
 };
 

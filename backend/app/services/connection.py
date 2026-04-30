@@ -33,7 +33,7 @@ class ConnectionService:
             engine = create_async_engine(test_url, poolclass=NullPool)
             async with engine.connect() as conn:
                 # Simple query to test connection
-                await conn.execute(select(1))
+                await asyncio.wait_for(conn.execute(select(1)), timeout=30)
             return True, ""
         except asyncio.TimeoutError:
             return False, "连接数据库超时，请检查网络或数据库状态"

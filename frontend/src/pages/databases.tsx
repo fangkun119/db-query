@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Space, Typography, message, Spin } from 'antd';
+import { Card, Button, Space, Typography, message, Skeleton } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Link } from 'react-router';
 import DatabaseList from '../components/database/database-list';
 import DatabaseForm from '../components/database/database-form';
 import type { DatabaseSummary } from '../types';
@@ -73,8 +72,8 @@ export const DatabasesPage: React.FC = () => {
           </Space>
 
           {loading && databases.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <Spin size="large" />
+            <div style={{ padding: '16px 0' }}>
+              <Skeleton active paragraph={{ rows: 4 }} />
             </div>
           ) : databases.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: '#8c8c8c' }}>

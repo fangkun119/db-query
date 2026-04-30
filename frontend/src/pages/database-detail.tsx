@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Card, Button, Space, Typography, Tag, Spin, message, Row, Col } from 'antd';
+import { Card, Button, Space, Typography, Tag, Skeleton, message, Row, Col } from 'antd';
 import { ArrowLeftOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
 import SchemaTree from '../components/schema/schema-tree';
 import type { DatabaseDetail } from '../types';
@@ -49,13 +49,24 @@ export const DatabaseDetailPage: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate('/dbs');
+    navigate('/databases');
   };
 
   if (loading) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
-        <Spin size="large" />
+      <div style={{ padding: '24px' }}>
+        <Row gutter={16}>
+          <Col span={6}>
+            <Card style={{ height: '400px' }}>
+              <Skeleton active paragraph={{ rows: 8 }} />
+            </Card>
+          </Col>
+          <Col span={18}>
+            <Card style={{ height: '400px' }}>
+              <Skeleton active paragraph={{ rows: 6 }} />
+            </Card>
+          </Col>
+        </Row>
       </div>
     );
   }
@@ -98,7 +109,7 @@ export const DatabaseDetailPage: React.FC = () => {
                 size="small"
               />
             }
-            bodyStyle={{ padding: '8px', maxHeight: 'calc(100vh - 200px)', overflow: 'auto' }}
+            styles={{ body: { padding: '8px', maxHeight: 'calc(100vh - 200px)', overflow: 'auto' } }}
             style={{ height: '100%' }}
           >
             <Space orientation="vertical" size="small" style={{ width: '100%' }}>
@@ -130,11 +141,13 @@ export const DatabaseDetailPage: React.FC = () => {
               </Space>
             }
             style={{ height: '100%' }}
-            bodyStyle={{
-              height: 'calc(100% - 60px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+            styles={{
+              body: {
+                height: 'calc(100% - 60px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
             }}
           >
             <Space orientation="vertical" align="center">

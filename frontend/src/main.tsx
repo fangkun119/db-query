@@ -18,7 +18,6 @@ createRoot(document.getElementById('root')!).render(
         options={{
           syncWithLocation: true,
           warnWhenUnsavedChanges: true,
-          telemetry: false,
         }}
       >
         <AppLayout>
