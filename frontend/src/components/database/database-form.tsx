@@ -30,10 +30,13 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
       form.resetFields();
       onSuccess();
       onClose();
-    } catch (error: any) {
-      if (error.response?.data?.detail) {
-        message.error(`添加失败：${error.response.data.detail}`);
-      } else if (error.errorFields) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as { response?: { data?: { detail?: string } } };
+        if (err.response?.data?.detail) {
+          message.error(`添加失败：${err.response.data.detail}`);
+        }
+      } else if (error && typeof error === 'object' && 'errorFields' in error) {
         // Validation error, do nothing
       } else {
         message.error('添加失败，请稍后重试');

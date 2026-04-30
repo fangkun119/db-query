@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Card, Button, Space, Typography, Tag, Skeleton, message, Row, Col } from 'antd';
 import { ArrowLeftOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
@@ -15,23 +15,30 @@ export const DatabaseDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadDatabase = async () => {
+  const loadDatabase = useCallback(async () => {
     if (!name) return;
 
     setLoading(true);
     try {
       const data = await getDb(name);
       setDatabase(data);
-    } catch (error: any) {
-      message.error(`加载数据库失败：${error.response?.data?.detail || error.message}`);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as { response?: { data?: { detail?: string } } };
+        message.error(`加载数据库失败：${err.response?.data?.detail || 'Unknown error'}`);
+      } else {
+        message.error('加载数据库失败');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [name]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     loadDatabase();
-  }, [name]);
+  }, [loadDatabase]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRefresh = async () => {
     if (!name) return;
@@ -41,8 +48,13 @@ export const DatabaseDetailPage: React.FC = () => {
       const data = await refreshDb(name);
       setDatabase(data);
       message.success('元数据已刷新');
-    } catch (error: any) {
-      message.error(`刷新失败：${error.response?.data?.detail || error.message}`);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as { response?: { data?: { detail?: string } } };
+        message.error(`刷新失败：${err.response?.data?.detail || 'Unknown error'}`);
+      } else {
+        message.error('刷新失败');
+      }
     } finally {
       setRefreshing(false);
     }

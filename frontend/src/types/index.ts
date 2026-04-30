@@ -33,7 +33,7 @@ export interface DatabaseDetail {
 
 export interface QueryResult {
   columnNames: string[];
-  rowData: Record<string, any>[];
+  rowData: Record<string, unknown>[];
   totalCount: number;
   isTruncated: boolean;
   executionTimeMs: number;

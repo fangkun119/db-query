@@ -93,7 +93,11 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete,
             <Popconfirm
               title="删除连接"
               description="确定要删除这个数据库连接吗？"
-              onConfirm={(e) => handleDelete(db.name, e as any)}
+              onConfirm={(e) => {
+                if (e) {
+                  handleDelete(db.name, e as React.MouseEvent);
+                }
+              }}
               okText="确定"
               cancelText="取消"
             >

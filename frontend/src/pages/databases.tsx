@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Space, Typography, message, Skeleton } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import DatabaseList from '../components/database/database-list';
@@ -13,29 +13,41 @@ export const DatabasesPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
 
-  const loadDatabases = async () => {
+  const loadDatabases = useCallback(async () => {
     setLoading(true);
     try {
       const data = await listDbs();
       setDatabases(data);
-    } catch (error: any) {
-      message.error(`加载数据库列表失败：${error.response?.data?.detail || error.message}`);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as { response?: { data?: { detail?: string } } };
+        message.error(`加载数据库列表失败：${err.response?.data?.detail || 'Unknown error'}`);
+      } else {
+        message.error('加载数据库列表失败');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     loadDatabases();
-  }, []);
+  }, [loadDatabases]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleDelete = async (name: string) => {
     try {
       await deleteDb(name);
       message.success('数据库连接已删除');
       loadDatabases();
-    } catch (error: any) {
-      message.error(`删除失败：${error.response?.data?.detail || error.message}`);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const err = error as { response?: { data?: { detail?: string } } };
+        message.error(`删除失败：${err.response?.data?.detail || 'Unknown error'}`);
+      } else {
+        message.error('删除失败');
+      }
     }
   };
 

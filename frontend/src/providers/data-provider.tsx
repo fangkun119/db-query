@@ -4,7 +4,36 @@ const api = axios.create({
   baseURL: '/api/v1',
 });
 
-export const dataProvider: any = {
+interface CreateVariables {
+  name?: string;
+  url?: string;
+}
+
+interface CreateMeta {
+  name?: string;
+}
+
+interface CreateParams {
+  resource: string;
+  variables: CreateVariables;
+  meta?: CreateMeta;
+}
+
+interface DataProviderMethods {
+  getList: ({ resource }: { resource: string }) => Promise<{ data: unknown[]; total: number }>;
+  getMany: () => Promise<{ data: unknown[] }>;
+  getOne: ({ resource, id }: { resource: string; id: string | number }) => Promise<{ data: unknown }>;
+  create: (params: CreateParams) => Promise<{ data: unknown }>;
+  deleteOne: ({ resource, id }: { resource: string; id: string | number }) => Promise<void>;
+  update: () => Promise<{ data: Record<string, never> }>;
+  getApiUrl: () => string;
+}
+
+interface DataProvider {
+  default: DataProviderMethods;
+}
+
+export const dataProvider: DataProvider = {
   default: {
     getList: async ({ resource }: { resource: string }) => {
       const response = await api.get(`/${resource}`);
@@ -23,7 +52,7 @@ export const dataProvider: any = {
       };
     },
 
-    create: async ({ resource, variables, meta }: { resource: string; variables: any; meta?: any }) => {
+    create: async ({ resource, variables, meta }: CreateParams) => {
       const name = meta?.name || variables?.name || '';
       const response = await api.put(`/${resource}/${encodeURIComponent(name)}`, variables);
       return {
