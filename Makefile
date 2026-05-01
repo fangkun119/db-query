@@ -1,6 +1,6 @@
 .PHONY: help install dev build test lint clean backend-install frontend-install
 .PHONY: backend-dev backend-test backend-lint backend-run
-.PHONY: frontend-dev frontend-build frontend-lint
+.PHONY: frontend-dev frontend-build frontend-lint test-db test-api
 
 # Default target
 help:
@@ -8,7 +8,9 @@ help:
 	@echo "  install           - Install all dependencies (backend + frontend)"
 	@echo "  dev               - Start all development servers"
 	@echo "  build             - Build all projects"
-	@echo "  test              - Run all tests"
+	@echo "  test              - Run backend tests"
+	@echo "  test-db           - Create test database (interview_db)"
+	@echo "  test-api          - Show REST Client API testing instructions"
 	@echo "  lint              - Run all linters"
 	@echo "  clean             - Clean build artifacts"
 	@echo ""
@@ -96,3 +98,21 @@ clean:
 	rm -rf frontend/dist
 	rm -rf frontend/.vite
 	@echo "Clean complete"
+
+# Create test database
+test-db:
+	@echo "Creating test database..."
+	psql -U postgres -f test/db_scripts/postgres/interview_db.sql
+
+# API test instructions
+test-api:
+	@echo "============================================================================"
+	@echo "REST Client API Testing"
+	@echo "============================================================================"
+	@echo "1. Install VSCode REST Client extension"
+	@echo "2. Start backend: make backend-dev"
+	@echo "3. Open test/rest/postgres.rest in VSCode"
+	@echo "4. Click 'Send Request' above each test"
+	@echo "============================================================================"
+	@echo "Or use keyboard shortcut: Cmd+Alt+R (Mac) / Ctrl+Alt+R (Windows/Linux)"
+	@echo "============================================================================"

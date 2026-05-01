@@ -1,0 +1,280 @@
+###############################################################################
+# DB Query Tool - Backend API Tests
+#
+# Prerequisites:
+# 1. Backend server running: make backend-dev
+# 2. Test database created: psql -U postgres -f test/db_scripts/postgres/interview_db.sql
+# 3. VSCode REST Client extension installed
+#
+# Usage:
+# - Click "Send Request" above each request
+# - Or use keyboard shortcut: Ctrl+Alt+R (Windows/Linux) / Cmd+Alt+R (Mac)
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+@dbUrl = postgresql://postgres@localhost:5432/interview_db
+@emptyDbUrl = postgresql://postgres@localhost:5432/empty_db
+
+###############################################################################
+# Health Check
+###############################################################################
+
+### Health Check - Root
+GET http://localhost:8000/
+
+### Health Check - OpenAPI Docs
+GET http://localhost:8000/docs
+
+###############################################################################
+# Database Management APIs
+###############################################################################
+
+### 1. List All Databases (Empty initially)
+GET {{baseUrl}}/dbs
+
+### 2. Add Database - interview_db
+PUT {{baseUrl}}/dbs/interview_db
+Content-Type: application/json
+
+{
+  "url": "{{dbUrl}}"
+}
+
+### 3. Add Database - empty_db
+PUT {{baseUrl}}/dbs/empty_db
+Content-Type: application/json
+
+{
+  "url": "{{emptyDbUrl}}"
+}
+
+### 4. List All Databases (Should show 2 databases)
+GET {{baseUrl}}/dbs
+
+### 5. Get Database Details - interview_db
+GET {{baseUrl}}/dbs/interview_db
+
+### 6. Get Database Details - empty_db
+GET {{baseUrl}}/dbs/empty_db
+
+### 7. Refresh Database Metadata - interview_db
+POST {{baseUrl}}/dbs/interview_db/refresh
+
+###############################################################################
+# Query Execution APIs - Basic Queries
+###############################################################################
+
+### 8. Simple SELECT with LIMIT
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM departments LIMIT 3"
+}
+
+### 9. SELECT without LIMIT (should auto-inject LIMIT 1000)
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM employees"
+}
+
+### 10. Query with JOIN
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT d.name, COUNT(e.id) as emp_count FROM departments d LEFT JOIN employees e ON d.id = e.department_id GROUP BY d.id, d.name ORDER BY emp_count DESC"
+}
+
+### 11. Query with Aggregate Functions
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT COUNT(*) as total, AVG(expected_salary) as avg_salary FROM candidates"
+}
+
+### 12. Query with CTE (Common Table Expression)
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "WITH dept_counts AS (SELECT department_id, COUNT(*) as cnt FROM employees GROUP BY department_id) SELECT d.name, dc.cnt FROM departments d JOIN dept_counts dc ON d.id = dc.department_id"
+}
+
+### 13. Query on View
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM v_candidate_pipeline"
+}
+
+### 14. Query with WHERE clause
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT first_name, last_name, status FROM candidates WHERE status = 'hired'"
+}
+
+### 15. Query with Multiple JOINs
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT c.first_name, c.last_name, p.title, ir.overall_rating FROM candidates c JOIN candidate_position_applications a ON c.id = a.candidate_id JOIN positions p ON a.position_id = p.id LEFT JOIN interview_schedules s ON a.id = s.application_id LEFT JOIN interview_results ir ON s.id = ir.schedule_id WHERE c.status = 'hired'"
+}
+
+###############################################################################
+# Query Execution - Empty Database
+###############################################################################
+
+### 16. Query on empty database
+POST {{baseUrl}}/dbs/empty_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT 1 as test_column, 'hello' as test_string"
+}
+
+###############################################################################
+# Error Handling Tests
+###############################################################################
+
+### 17. Error: DELETE not allowed
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "DELETE FROM employees WHERE id = 1"
+}
+
+### 18. Error: INSERT not allowed
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "INSERT INTO departments (name) VALUES ('Test')"
+}
+
+### 19. Error: UPDATE not allowed
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "UPDATE candidates SET status = 'active'"
+}
+
+### 20. Error: Non-existent table
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM nonexistent_table"
+}
+
+### 21. Error: Invalid SQL syntax
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELEC * FROM departments"
+}
+
+### 22. Error: Empty SQL
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": ""
+}
+
+### 23. Error: Non-existent database connection
+POST {{baseUrl}}/dbs/nonexistent_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT 1"
+}
+
+### 24. Error: Invalid URL format
+PUT {{baseUrl}}/dbs/invalid_db
+Content-Type: application/json
+
+{
+  "url": "mysql://localhost:3306/test"
+}
+
+### 25. Error: Connection failed
+PUT {{baseUrl}}/dbs/failed_db
+Content-Type: application/json
+
+{
+  "url": "postgresql://wrong:wrong@localhost:9999/nodb"
+}
+
+### 26. Error: Duplicate database name
+PUT {{baseUrl}}/dbs/interview_db
+Content-Type: application/json
+
+{
+  "url": "{{dbUrl}}"
+}
+
+### 27. Error: Get non-existent database
+GET {{baseUrl}}/dbs/nonexistent_db
+
+### 28. Error: Delete non-existent database
+DELETE {{baseUrl}}/dbs/nonexistent_db
+
+###############################################################################
+# Complex Query Tests
+###############################################################################
+
+### 29. Query with Subquery
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT name FROM departments WHERE id = (SELECT MAX(id) FROM departments)"
+}
+
+### 30. Query with IN clause
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT first_name, last_name FROM candidates WHERE id IN (SELECT candidate_id FROM candidate_position_applications WHERE status = 'accepted')"
+}
+
+### 31. Query with ORDER BY
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT first_name, last_name, years_of_experience FROM candidates ORDER BY years_of_experience DESC, last_name ASC"
+}
+
+### 32. Query with CASE statement
+POST {{baseUrl}}/dbs/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT first_name, last_name, CASE WHEN expected_salary > 170000 THEN 'High' WHEN expected_salary > 150000 THEN 'Medium' ELSE 'Low' END as salary_range FROM candidates"
+}
+
+###############################################################################
+# Cleanup (Optional - Run to reset test state)
+###############################################################################
+
+### Delete Database - interview_db
+DELETE {{baseUrl}}/dbs/interview_db
+
+### Delete Database - empty_db
+DELETE {{baseUrl}}/dbs/empty_db
+
+### Verify deletion (Should return empty array)
+GET {{baseUrl}}/dbs

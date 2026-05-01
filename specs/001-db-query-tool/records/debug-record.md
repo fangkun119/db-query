@@ -65,3 +65,43 @@
 | 现象 | 数据库详情页点击返回按钮后，URL 变为 `/dbs`，页面显示 "数据库不存在" 而非列表页 | Playwright E2E 测试第 7 步：点击详情页返回按钮后，`browser_snapshot` 显示空白页面而非数据库列表；检查 URL 为 `/dbs` 而非 `/databases` |
 | 原因 | `database-detail.tsx` 第 52 行 `handleBack` 函数中 `navigate('/dbs')` 硬编码了错误路径 | 1. Playwright 点击返回按钮后检查 URL 为 `/dbs`；2. `Read database-detail.tsx` 定位到 `handleBack` → `navigate('/dbs')`；3. 对比 `main.tsx` 路由配置：列表页路由为 `/databases` 而非 `/dbs`；4. `/dbs/:name` 是详情页路由，`/dbs` 不匹配任何已注册路由，React Router 渲染空状态 |
 | 修复 | `navigate('/dbs')` → `navigate('/databases')` | 修改后 Playwright 验证：点击返回按钮 → URL 变为 `/databases` → 页面正确显示数据库列表 |
+
+## Phase 4
+
+### Bug Ph4-001 重复导出导致模块加载失败 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 浏览器控制台错误 `Duplicate export of 'SqlEditor'`，Monaco 编辑器无法加载 | 1. Playwright 打开数据库详情页，`browser_console_messages` 返回 `Error: Duplicate export of 'SqlEditor'`；2. 同时出现 `Duplicate export of 'ResultTable'`；3. 页面空白，Schema 树渲染但编辑器区域无内容 |
+| 原因 | `components/editor/index.ts` 和 `components/results/index.ts` 中存在重复导出语句 | 1. `grep -rn "export.*SqlEditor" src/` 发现 `index.ts` 同时包含 `export { SqlEditor }` 和 `export { default as SqlEditor }`；2. 两条语句导出同名标识符，ES Module 规范视为重复定义错误；3. 检查 `sql-editor.tsx` 确认同时存在 `export const SqlEditor` 和 `export default SqlEditor`，导致 index.ts 的两种导出方式冲突 |
+| 修复 | 移除 `export { default as X }` 形式的重复导出，只保留命名导出 | 1. `components/editor/index.ts` 只保留 `export { SqlEditor } from './sql-editor'`；2. `components/results/index.ts` 只保留 `export { ResultTable } from './result-table'`；3. 修改后 Vite 热更新，控制台错误消失，Monaco 编辑器正常渲染 |
+
+### Bug Ph4-002 CSP 配置阻止 Monaco CDN 加载 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | Monaco 编辑器区域显示占位符，控制台错误 `Loading the script 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js' violates CSP` | 1. 测试 E2E 流程，数据库详情页加载后 Schema 树正常，但编辑器区域无内容；2. `browser_console_messages` 显示 CSP 违规错误，指出 `script-src` 指令不允许 `cdn.jsdelivr.net`；3. `curl -I http://localhost:5173/` 检查响应头，确认 CSP 为 `script-src 'self' 'unsafe-eval' 'unsafe-inline'`（不含 CDN） |
+| 原因 | vite.config.ts 的 CSP 配置未包含 Monaco CDN，`script-src-elem` 未显式设置 | 1. `@monaco-editor/react` 默认从 `cdn.jsdelivr.net` 加载 Monaco 运行时；2. 检查 `vite.config.ts`，`Content-Security-Policy` 中 `script-src` 不含 CDN URL；3. 浏览器解析 CSP 时，`script-src-elem` 未显式设置则回退到 `script-src`，导致外部脚本被阻止；4. 错误消息明确提示 `script-src-elem was not explicitly set` |
+| 修复 | 更新 vite.config.ts，添加 `script-src-elem` 指令并包含 `https://cdn.jsdelivr.net` | 1. 修改 CSP 为单行字符串，包含 `script-src-elem 'self' 'unsafe-inline' https://cdn.jsdelivr.net`；2. 同时添加 `worker-src 'self' blob:` 和 `child-src 'self' blob:` 支持 Monaco Web Worker；3. 添加 `connect-src` 和 `font-src` 包含 CDN 以防其他资源加载失败；4. 重启 Vite 服务器，`curl` 验证 CSP 头正确更新，Playwright 验证 Monaco 编辑器正常加载 |
+
+### Phase 4 回归测试验证 ✅ (2026-05-01)
+
+| 测试项 | 结果 | 说明 |
+|--------|------|------|
+| 数据库删除重建 | ✅ | interview_db 重建成功（14表，2视图） |
+| 后端健康检查 | ✅ | API 响应正常 |
+| 添加数据库连接 | ✅ | 连接已存在（正确处理） |
+| 列出数据库 | ✅ | 返回 2 个连接 |
+| 基本 SELECT 查询 | ✅ | 返回 3 行，执行时间 14.96ms |
+| LIMIT 自动注入 | ✅ | isTruncated=true 正确标记 |
+| DELETE 拒绝 | ✅ | 返回 400 错误 |
+| JOIN 查询 | ✅ | 聚合结果正确 |
+| 前端列表页 | ✅ | 显示 2 个数据库连接 |
+| 前端详情页 | ✅ | Schema 树显示 16+3 表/视图 |
+| Monaco 编辑器 | ✅ | SQL 语法高亮正常 |
+| 查询执行 | ✅ | `SELECT * FROM departments LIMIT 2` 成功 |
+| 结果表格 | ✅ | 显示 2 行，列名正确 |
+| 控制台 | ✅ | 0 errors, 0 warnings |
+
+**无新 Bug 发现 - Phase 4 功能稳定运行**
+
