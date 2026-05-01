@@ -3,6 +3,7 @@ import { Modal, Form, Input, message, Space, Typography } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { CreateConnectionRequest } from '../../types';
 import { addDb } from '../../services/api';
+import { handleApiError } from '../../utils/errors';
 
 const { Text } = Typography;
 
@@ -31,15 +32,10 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
       onSuccess();
       onClose();
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as { response?: { data?: { detail?: string } } };
-        if (err.response?.data?.detail) {
-          message.error(`添加失败：${err.response.data.detail}`);
-        }
-      } else if (error && typeof error === 'object' && 'errorFields' in error) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
         // Validation error, do nothing
       } else {
-        message.error('添加失败，请稍后重试');
+        message.error(handleApiError(error, '添加失败，请稍后重试'));
       }
     } finally {
       setLoading(false);

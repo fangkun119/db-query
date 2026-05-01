@@ -21,12 +21,9 @@ interface CreateParams {
 
 interface DataProviderMethods {
   getList: ({ resource }: { resource: string }) => Promise<{ data: unknown[]; total: number }>;
-  getMany: () => Promise<{ data: unknown[] }>;
   getOne: ({ resource, id }: { resource: string; id: string | number }) => Promise<{ data: unknown }>;
   create: (params: CreateParams) => Promise<{ data: unknown }>;
   deleteOne: ({ resource, id }: { resource: string; id: string | number }) => Promise<void>;
-  update: () => Promise<{ data: Record<string, never> }>;
-  getApiUrl: () => string;
 }
 
 interface DataProvider {
@@ -42,8 +39,6 @@ export const dataProvider: DataProvider = {
         total: response.data.length,
       };
     },
-
-    getMany: async () => ({ data: [] }),
 
     getOne: async ({ resource, id }: { resource: string; id: string | number }) => {
       const response = await api.get(`/${resource}/${id}`);
@@ -63,9 +58,5 @@ export const dataProvider: DataProvider = {
     deleteOne: async ({ resource, id }: { resource: string; id: string | number }) => {
       await api.delete(`/${resource}/${id}`);
     },
-
-    update: async () => ({ data: {} }),
-
-    getApiUrl: () => '/api/v1',
   },
 };

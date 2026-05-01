@@ -162,19 +162,6 @@ class ConnectionService:
             return True, ""
 
     @staticmethod
-    async def update_connection_status(name: str, status: str) -> None:
-        """Update connection status."""
-        session_maker = get_async_session_maker()
-        async with session_maker() as session:
-            result = await session.execute(
-                select(DatabaseConnection).where(DatabaseConnection.name == name)
-            )
-            conn = result.scalar_one_or_none()
-            if conn:
-                conn.status = status
-                await session.commit()
-
-    @staticmethod
     def get_connection_url(url: str) -> str:
         """Convert URL to asyncpg format for queries."""
         if url.startswith("postgresql://"):

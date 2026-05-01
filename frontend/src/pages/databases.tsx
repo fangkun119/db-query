@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Space, Typography, message, Skeleton } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router';
 import DatabaseList from '../components/database/database-list';
 import DatabaseForm from '../components/database/database-form';
 import type { DatabaseSummary } from '../types';
 import { listDbs, deleteDb } from '../services/api';
+import { handleApiError } from '../utils/errors';
 
 const { Title } = Typography;
 
 export const DatabasesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [databases, setDatabases] = useState<DatabaseSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -19,12 +22,7 @@ export const DatabasesPage: React.FC = () => {
       const data = await listDbs();
       setDatabases(data);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as { response?: { data?: { detail?: string } } };
-        message.error(`加载数据库列表失败：${err.response?.data?.detail || 'Unknown error'}`);
-      } else {
-        message.error('加载数据库列表失败');
-      }
+      message.error(handleApiError(error, '加载数据库列表失败'));
     } finally {
       setLoading(false);
     }
@@ -42,17 +40,12 @@ export const DatabasesPage: React.FC = () => {
       message.success('数据库连接已删除');
       loadDatabases();
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as { response?: { data?: { detail?: string } } };
-        message.error(`删除失败：${err.response?.data?.detail || 'Unknown error'}`);
-      } else {
-        message.error('删除失败');
-      }
+      message.error(handleApiError(error, '删除失败'));
     }
   };
 
   const handleClick = (name: string) => {
-    window.location.href = `/dbs/${encodeURIComponent(name)}`;
+    navigate(`/dbs/${encodeURIComponent(name)}`);
   };
 
   const handleAddSuccess = () => {

@@ -2,6 +2,12 @@ import React from 'react';
 import { Badge, Button, Typography, Space, Popconfirm, Tag } from 'antd';
 import { DeleteOutlined, DatabaseOutlined } from '@ant-design/icons';
 import type { DatabaseSummary } from '../../types';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
+
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
 
 const { Text } = Typography;
 
@@ -16,30 +22,6 @@ const statusConfig: Record<string, { color: string; text: string }> = {
   error: { color: 'error', text: '错误' },
 };
 
-const formatDistanceToNow = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  const intervals = {
-    年: 31536000,
-    月: 2592000,
-    周: 604800,
-    天: 86400,
-    小时: 3600,
-    分钟: 60,
-  };
-
-  for (const [unit, secondsInUnit] of Object.entries(intervals)) {
-    const interval = Math.floor(seconds / secondsInUnit);
-    if (interval >= 1) {
-      return `${interval}${unit}前`;
-    }
-  }
-
-  return '刚刚';
-};
-
 export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete, onClick }) => {
   const handleDelete = (name: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -51,7 +33,7 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete,
       {databases.map((db) => {
         const statusInfo = statusConfig[db.status] || { color: 'default', text: db.status };
         const lastRefreshed = db.lastRefreshedAt
-          ? formatDistanceToNow(db.lastRefreshedAt)
+          ? dayjs(db.lastRefreshedAt).fromNow()
           : '从未刷新';
 
         return (

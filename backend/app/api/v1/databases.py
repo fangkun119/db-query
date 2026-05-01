@@ -6,8 +6,6 @@ from app.models.query import QueryRequest, QueryResultResponse
 from app.services.connection import ConnectionService
 from app.services.metadata import MetadataService
 from app.services.query import QueryService
-from app.db.sqlite import get_engine, get_async_session_maker
-from sqlalchemy import select
 
 
 router = APIRouter(prefix="/dbs")
@@ -82,16 +80,8 @@ async def execute_query(name: str, request: QueryRequest) -> QueryResultResponse
     Validates the SQL (must be SELECT), injects LIMIT if missing,
     and returns results.
     """
-    # Get connection URL from SQLite
-    engine = get_engine()
-    async_session_maker = get_async_session_maker()
-
-    async with engine.begin() as conn:
-        from app.db.sqlite import DatabaseConnection
-        result = await conn.execute(
-            select(DatabaseConnection).where(DatabaseConnection.name == name)
-        )
-        connection = result.first()
+    # Get connection from database
+    connection = await ConnectionService.get_connection(name)
 
     if not connection:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="数据库连接不存在")

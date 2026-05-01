@@ -7,6 +7,7 @@ import { SqlEditor } from '../components/editor';
 import { ResultTable } from '../components/results';
 import type { DatabaseDetail, QueryResult } from '../types';
 import { getDb, refreshDb, executeQuery } from '../services/api';
+import { handleApiError } from '../utils/errors';
 
 const { Title, Text } = Typography;
 
@@ -28,12 +29,7 @@ export const DatabaseDetailPage: React.FC = () => {
       const data = await getDb(name);
       setDatabase(data);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as { response?: { data?: { detail?: string } } };
-        message.error(`加载数据库失败：${err.response?.data?.detail || 'Unknown error'}`);
-      } else {
-        message.error('加载数据库失败');
-      }
+      message.error(handleApiError(error, '加载数据库失败'));
     } finally {
       setLoading(false);
     }
@@ -54,12 +50,7 @@ export const DatabaseDetailPage: React.FC = () => {
       setDatabase(data);
       message.success('元数据已刷新');
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as { response?: { data?: { detail?: string } } };
-        message.error(`刷新失败：${err.response?.data?.detail || 'Unknown error'}`);
-      } else {
-        message.error('刷新失败');
-      }
+      message.error(handleApiError(error, '刷新失败'));
     } finally {
       setRefreshing(false);
     }
@@ -74,12 +65,7 @@ export const DatabaseDetailPage: React.FC = () => {
       setQueryResult(result);
       message.success(`查询执行成功，返回 ${result.totalCount} 行`);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const err = error as { response?: { data?: { detail?: string } } };
-        message.error(`查询执行失败：${err.response?.data?.detail || 'Unknown error'}`);
-      } else {
-        message.error('查询执行失败');
-      }
+      message.error(handleApiError(error, '查询执行失败'));
     } finally {
       setExecutingQuery(false);
     }
