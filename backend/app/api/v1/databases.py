@@ -8,7 +8,7 @@ from app.services.metadata import MetadataService
 from app.services.query import QueryService
 
 
-router = APIRouter(prefix="/dbs")
+router = APIRouter(prefix="/databases")
 
 
 @router.get("", response_model=list[DatabaseSummaryResponse])

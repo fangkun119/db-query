@@ -127,7 +127,7 @@ test.describe('UI Components', () => {
   })
 
   test('should handle direct database URL', async ({ page }) => {
-    await page.goto('/dbs/some-database')
+    await page.goto('/databases/some-database')
     await page.waitForLoadState('networkidle')
 
     // Page should load without crashing

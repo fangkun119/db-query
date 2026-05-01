@@ -22,7 +22,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<Navigate to="/databases" replace />} />
           <Route path="/databases" element={<DatabasesPage />} />
-          <Route path="/dbs/:name" element={<DatabaseDetailPage />} />
+          <Route path="/databases/:name" element={<DatabaseDetailPage />} />
         </Routes>
       </Refine>
     </BrowserRouter>

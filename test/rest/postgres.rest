@@ -30,10 +30,10 @@ GET http://localhost:8000/docs
 ###############################################################################
 
 ### 1. List All Databases (Empty initially)
-GET {{baseUrl}}/dbs
+GET {{baseUrl}}/databases
 
 ### 2. Add Database - interview_db
-PUT {{baseUrl}}/dbs/interview_db
+PUT {{baseUrl}}/databases/interview_db
 Content-Type: application/json
 
 {
@@ -41,7 +41,7 @@ Content-Type: application/json
 }
 
 ### 3. Add Database - empty_db
-PUT {{baseUrl}}/dbs/empty_db
+PUT {{baseUrl}}/databases/empty_db
 Content-Type: application/json
 
 {
@@ -49,23 +49,23 @@ Content-Type: application/json
 }
 
 ### 4. List All Databases (Should show 2 databases)
-GET {{baseUrl}}/dbs
+GET {{baseUrl}}/databases
 
 ### 5. Get Database Details - interview_db
-GET {{baseUrl}}/dbs/interview_db
+GET {{baseUrl}}/databases/interview_db
 
 ### 6. Get Database Details - empty_db
-GET {{baseUrl}}/dbs/empty_db
+GET {{baseUrl}}/databases/empty_db
 
 ### 7. Refresh Database Metadata - interview_db
-POST {{baseUrl}}/dbs/interview_db/refresh
+POST {{baseUrl}}/databases/interview_db/refresh
 
 ###############################################################################
 # Query Execution APIs - Basic Queries
 ###############################################################################
 
 ### 8. Simple SELECT with LIMIT
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -73,7 +73,7 @@ Content-Type: application/json
 }
 
 ### 9. SELECT without LIMIT (should auto-inject LIMIT 1000)
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -81,7 +81,7 @@ Content-Type: application/json
 }
 
 ### 10. Query with JOIN
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -89,7 +89,7 @@ Content-Type: application/json
 }
 
 ### 11. Query with Aggregate Functions
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -97,7 +97,7 @@ Content-Type: application/json
 }
 
 ### 12. Query with CTE (Common Table Expression)
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -105,7 +105,7 @@ Content-Type: application/json
 }
 
 ### 13. Query on View
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -113,7 +113,7 @@ Content-Type: application/json
 }
 
 ### 14. Query with WHERE clause
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -121,7 +121,7 @@ Content-Type: application/json
 }
 
 ### 15. Query with Multiple JOINs
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -133,7 +133,7 @@ Content-Type: application/json
 ###############################################################################
 
 ### 16. Query on empty database
-POST {{baseUrl}}/dbs/empty_db/query
+POST {{baseUrl}}/databases/empty_db/query
 Content-Type: application/json
 
 {
@@ -145,7 +145,7 @@ Content-Type: application/json
 ###############################################################################
 
 ### 17. Error: DELETE not allowed
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -153,7 +153,7 @@ Content-Type: application/json
 }
 
 ### 18. Error: INSERT not allowed
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -161,7 +161,7 @@ Content-Type: application/json
 }
 
 ### 19. Error: UPDATE not allowed
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -169,7 +169,7 @@ Content-Type: application/json
 }
 
 ### 20. Error: Non-existent table
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -177,7 +177,7 @@ Content-Type: application/json
 }
 
 ### 21. Error: Invalid SQL syntax
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -185,7 +185,7 @@ Content-Type: application/json
 }
 
 ### 22. Error: Empty SQL
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -193,7 +193,7 @@ Content-Type: application/json
 }
 
 ### 23. Error: Non-existent database connection
-POST {{baseUrl}}/dbs/nonexistent_db/query
+POST {{baseUrl}}/databases/nonexistent_db/query
 Content-Type: application/json
 
 {
@@ -201,7 +201,7 @@ Content-Type: application/json
 }
 
 ### 24. Error: Invalid URL format
-PUT {{baseUrl}}/dbs/invalid_db
+PUT {{baseUrl}}/databases/invalid_db
 Content-Type: application/json
 
 {
@@ -209,7 +209,7 @@ Content-Type: application/json
 }
 
 ### 25. Error: Connection failed
-PUT {{baseUrl}}/dbs/failed_db
+PUT {{baseUrl}}/databases/failed_db
 Content-Type: application/json
 
 {
@@ -217,7 +217,7 @@ Content-Type: application/json
 }
 
 ### 26. Error: Duplicate database name
-PUT {{baseUrl}}/dbs/interview_db
+PUT {{baseUrl}}/databases/interview_db
 Content-Type: application/json
 
 {
@@ -225,17 +225,17 @@ Content-Type: application/json
 }
 
 ### 27. Error: Get non-existent database
-GET {{baseUrl}}/dbs/nonexistent_db
+GET {{baseUrl}}/databases/nonexistent_db
 
 ### 28. Error: Delete non-existent database
-DELETE {{baseUrl}}/dbs/nonexistent_db
+DELETE {{baseUrl}}/databases/nonexistent_db
 
 ###############################################################################
 # Complex Query Tests
 ###############################################################################
 
 ### 29. Query with Subquery
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -243,7 +243,7 @@ Content-Type: application/json
 }
 
 ### 30. Query with IN clause
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -251,7 +251,7 @@ Content-Type: application/json
 }
 
 ### 31. Query with ORDER BY
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -259,7 +259,7 @@ Content-Type: application/json
 }
 
 ### 32. Query with CASE statement
-POST {{baseUrl}}/dbs/interview_db/query
+POST {{baseUrl}}/databases/interview_db/query
 Content-Type: application/json
 
 {
@@ -271,10 +271,10 @@ Content-Type: application/json
 ###############################################################################
 
 ### Delete Database - interview_db
-DELETE {{baseUrl}}/dbs/interview_db
+DELETE {{baseUrl}}/databases/interview_db
 
 ### Delete Database - empty_db
-DELETE {{baseUrl}}/dbs/empty_db
+DELETE {{baseUrl}}/databases/empty_db
 
 ### Verify deletion (Should return empty array)
-GET {{baseUrl}}/dbs
+GET {{baseUrl}}/databases

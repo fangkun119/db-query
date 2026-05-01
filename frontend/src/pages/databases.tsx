@@ -45,7 +45,7 @@ export const DatabasesPage: React.FC = () => {
   };
 
   const handleClick = (name: string) => {
-    navigate(`/dbs/${encodeURIComponent(name)}`);
+    navigate(`/databases/${encodeURIComponent(name)}`);
   };
 
   const handleAddSuccess = () => {
