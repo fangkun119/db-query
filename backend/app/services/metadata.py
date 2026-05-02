@@ -43,11 +43,21 @@ class MetadataService:
                         c.data_type,
                         c.is_nullable,
                         c.column_default,
-                        c.ordinal_position
+                        c.ordinal_position,
+                        COALESCE(kcu.column_name IS NOT NULL, false) as is_primary_key
                     FROM information_schema.tables t
                     LEFT JOIN information_schema.columns c
                         ON t.table_schema = c.table_schema
                         AND t.table_name = c.table_name
+                    LEFT JOIN information_schema.table_constraints tc
+                        ON tc.table_schema = t.table_schema
+                        AND tc.table_name = t.table_name
+                        AND tc.constraint_type = 'PRIMARY KEY'
+                    LEFT JOIN information_schema.key_column_usage kcu
+                        ON kcu.table_schema = t.table_schema
+                        AND kcu.table_name = t.table_name
+                        AND kcu.column_name = c.column_name
+                        AND kcu.constraint_name = tc.constraint_name
                     WHERE t.table_schema NOT IN ('pg_catalog', 'information_schema')
                     ORDER BY t.table_schema, t.table_name, c.ordinal_position
                 """)
@@ -78,7 +88,8 @@ class MetadataService:
                             "data_type": row[4],
                             "is_nullable": row[5] == "YES",
                             "default_value": row[6],
-                            "ordinal_position": row[7]
+                            "ordinal_position": row[7],
+                            "is_primary_key": row[8] if row[8] is not None else False
                         })
 
                 # Convert to TableMetadata models
@@ -119,7 +130,8 @@ class MetadataService:
                         "data_type": col.data_type,
                         "is_nullable": col.is_nullable,
                         "default_value": col.default_value,
-                        "ordinal_position": col.ordinal_position
+                        "ordinal_position": col.ordinal_position,
+                        "is_primary_key": col.is_primary_key
                     }
                     for col in table.columns
                 ]
@@ -142,7 +154,8 @@ class MetadataService:
                     data_type=col["data_type"],
                     is_nullable=col["is_nullable"],
                     default_value=col.get("default_value"),
-                    ordinal_position=col["ordinal_position"]
+                    ordinal_position=col["ordinal_position"],
+                    is_primary_key=col.get("is_primary_key", False)
                 )
                 for col in table_data["columns"]
             ]
@@ -204,7 +217,8 @@ class MetadataService:
                             "name": col.name,
                             "data_type": col.data_type,
                             "is_nullable": col.is_nullable,
-                            "default_value": col.default_value
+                            "default_value": col.default_value,
+                            "is_primary_key": col.is_primary_key
                         }
                         for col in table.columns
                     ]

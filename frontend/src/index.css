@@ -1,1 +1,47 @@
 @import "tailwindcss";
+
+/* Schema Tree container padding */
+.schema-tree-compact {
+  padding: 8px 8px 8px 10px !important;
+  background-color: #fff;
+  border-radius: 4px;
+  font-family: sans-serif;
+}
+
+
+/* Schema search input border color */
+.schema-search-input,
+.schema-search-input:hover,
+.schema-search-input:focus {
+  border-color: #CED4DA !important;
+}
+.schema-search-input:focus,
+.schema-search-input-focused {
+  border-color: #CED4DA !important;
+  box-shadow: 0 0 0 2px rgba(206, 212, 218, 0.2) !important;
+}
+
+/* Global title color - dark gray #1E1E1E */
+.ant-typography h1,
+.ant-typography h2,
+.ant-typography h3,
+.ant-typography h4,
+.ant-typography h5,
+.ant-typography h1,
+.ant-typography h2,
+.ant-typography h3,
+.ant-typography h4,
+.ant-typography h5,
+h1.ant-typography,
+h2.ant-typography,
+h3.ant-typography,
+h4.ant-typography,
+h5.ant-typography {
+  color: #1E1E1E !important;
+}
+
+/* Strong text color */
+strong {
+  color: #1E1E1E !important;
+}
+

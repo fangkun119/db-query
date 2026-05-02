@@ -35,11 +35,6 @@ export const deleteDb = async (name: string): Promise<void> => {
   await api.delete(`/databases/${encodeURIComponent(name)}`);
 };
 
-export const refreshDb = async (name: string): Promise<DatabaseDetail> => {
-  const response = await api.post<DatabaseDetail>(`/databases/${encodeURIComponent(name)}/refresh`);
-  return response.data;
-};
-
 export const executeQuery = async (name: string, data: QueryRequest): Promise<QueryResult> => {
   const response = await api.post<QueryResult>(`/databases/${encodeURIComponent(name)}/query`, data);
   return response.data;

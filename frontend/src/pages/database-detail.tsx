@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Card, Button, Space, Typography, Tag, Skeleton, message, Row, Col } from 'antd';
-import { ArrowLeftOutlined, ReloadOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ReloadOutlined, DatabaseOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import SchemaTree from '../components/schema/schema-tree';
 import { SqlEditor } from '../components/editor';
 import { ResultTable } from '../components/results';
 import type { DatabaseDetail, QueryResult } from '../types';
-import { getDb, refreshDb, executeQuery } from '../services/api';
+import { getDb, executeQuery } from '../services/api';
 import { handleApiError } from '../utils/errors';
 
 const { Title, Text } = Typography;
@@ -29,7 +29,7 @@ export const DatabaseDetailPage: React.FC = () => {
       const data = await getDb(name);
       setDatabase(data);
     } catch (error: unknown) {
-      message.error(handleApiError(error, '加载数据库失败'));
+      message.error(handleApiError(error, 'Failed to load database'));
     } finally {
       setLoading(false);
     }
@@ -46,11 +46,11 @@ export const DatabaseDetailPage: React.FC = () => {
 
     setRefreshing(true);
     try {
-      const data = await refreshDb(name);
+      const data = await getDb(name);
       setDatabase(data);
-      message.success('元数据已刷新');
+      message.success('Metadata refreshed');
     } catch (error: unknown) {
-      message.error(handleApiError(error, '刷新失败'));
+      message.error(handleApiError(error, 'Failed to refresh'));
     } finally {
       setRefreshing(false);
     }
@@ -63,9 +63,9 @@ export const DatabaseDetailPage: React.FC = () => {
     try {
       const result = await executeQuery(name, { sql: sqlQuery });
       setQueryResult(result);
-      message.success(`查询执行成功，返回 ${result.totalCount} 行`);
+      message.success(`Query executed successfully, ${result.totalCount} rows returned`);
     } catch (error: unknown) {
-      message.error(handleApiError(error, '查询执行失败'));
+      message.error(handleApiError(error, 'Query execution failed'));
     } finally {
       setExecutingQuery(false);
     }
@@ -97,7 +97,7 @@ export const DatabaseDetailPage: React.FC = () => {
   if (!database) {
     return (
       <div style={{ padding: '24px', textAlign: 'center' }}>
-        <Text type="secondary">数据库不存在</Text>
+        <Text type="secondary">Database does not exist</Text>
       </div>
     );
   }
@@ -153,15 +153,26 @@ export const DatabaseDetailPage: React.FC = () => {
           {/* SQL Editor Section */}
           <Card
             title={
-              <Space>
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                <Space>
+                  <Button
+                    type="text"
+                    icon={<ArrowLeftOutlined />}
+                    onClick={handleBack}
+                  />
+                  <Title level={4} style={{ margin: 0 }}>
+                    SQL Query Editor
+                  </Title>
+                </Space>
                 <Button
-                  type="text"
-                  icon={<ArrowLeftOutlined />}
-                  onClick={handleBack}
-                />
-                <Title level={4} style={{ margin: 0 }}>
-                  SQL 查询编辑器
-                </Title>
+                  icon={<PlayCircleOutlined />}
+                  onClick={handleExecuteQuery}
+                  loading={executingQuery}
+                  disabled={!sqlQuery.trim()}
+                  style={{ backgroundColor: '#B8860B', color: '#FFFFFF', border: 'none', fontWeight: 600 }}
+                >
+                  Execute Query
+                </Button>
               </Space>
             }
             style={{ marginBottom: '16px', flex: '0 0 auto' }}
@@ -170,9 +181,7 @@ export const DatabaseDetailPage: React.FC = () => {
             <SqlEditor
               value={sqlQuery}
               onChange={setSqlQuery}
-              onExecute={handleExecuteQuery}
-              loading={executingQuery}
-              placeholder="在此输入 SQL 查询语句... 例如: SELECT * FROM test_users LIMIT 10"
+              placeholder="Enter SQL query... e.g., SELECT * FROM test_users LIMIT 10"
             />
           </Card>
 
@@ -181,8 +190,13 @@ export const DatabaseDetailPage: React.FC = () => {
             title={
               <Space>
                 <Title level={5} style={{ margin: 0 }}>
-                  查询结果
+                  Query Results
                 </Title>
+                {queryResult && (
+                  <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                    - {queryResult.totalCount} ROWS - {queryResult.executionTimeMs}MS
+                  </Text>
+                )}
               </Space>
             }
             style={{ flex: 1, overflow: 'hidden' }}

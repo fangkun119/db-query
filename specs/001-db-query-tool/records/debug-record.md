@@ -105,3 +105,52 @@
 
 **无新 Bug 发现 - Phase 4 功能稳定运行**
 
+
+## Phase 4.8
+
+### 兼容性注意 4.8-01 API 端点移除影响 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 移除 `POST /api/v1/databases/{name}/refresh` 端点后，需要确保所有调用方已迁移 | 1. 检查 `services/api.ts` 确认 `refreshDb` 函数已删除；2. 检查 `pages/database-detail.tsx` 确认使用 `getDb` 替代 `refreshDb`；3. `grep -r "refresh" frontend/src/` 验证无遗留调用 |
+| 原因 | API 简化：refresh 功能合并到 get，减少端点数量 | `get_database` 端点改为 `force_refresh=True`，每次访问都返回最新元数据，无需单独刷新端点 |
+| 修复 | 前端统一使用 `getDb(name)` 获取数据库详情（含最新元数据） | 验证 `DatabaseWorkspace` 组件的刷新按钮调用 `getDb(selectedDatabase.name)` 正常工作 |
+
+### 兼容性注意 4.8-02 主键字段空值处理 (后端+前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 新增 `is_primary_key` 字段需处理无主键表的空值情况 | 1. 检查 `metadata.py` SQL 查询：`LEFT JOIN` 确保无主键列返回 NULL；2. 检查序列化逻辑：`row[8] if row[8] is not None else False` 正确转换 NULL；3. 前端 `ColumnMeta.isPrimaryKey` 为可选字段，默认 undefined |
+| 原因 | 使用 `LEFT JOIN information_schema.key_column_usage`，无主键的列 kcu.column_name 为 NULL | PostgreSQL 元数据查询：非主键列在 key_column_usage 表中无记录，LEFT JOIN 返回 NULL |
+| 处理 | 后端：NULL 转为 False；前端：可选字段 + 标签条件渲染 | 1. Schema 树中 `{col.isPrimaryKey && <span>PK</span>}` 条件渲染；2. 空数据库测试：empty_db (0 表) 验证无错误 |
+
+### 兼容性注意 4.8-03 国际化文本替换完整性 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 全站英文化需确保无遗留中文文本 | 1. `grep -r "[一-龥]" frontend/src/` 搜索中文字符；2. 检查 `dayjs.locale('zh-cn')` 已改为 `'en'`；3. 验证所有用户可见文本：按钮、提示、错误消息、占位符 |
+| 原因 | Phase 4.8 目标之一是全站英文化 | 涉及文件：`database-list.tsx`、`schema-tree.tsx`、`result-table.tsx`、`database-detail.tsx`、`database-workspace.tsx` |
+| 处理 | 系统性替换所有中文文本为英文 | 示例替换："活跃"→"active"/删除，"个表"→"tables"，"执行查询"→"Execute Query"，"最后刷新"→"Last updated" |
+
+### 兼容性注意 4.8-04 路由简化影响 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 路由从 `/databases/:name` 简化为单 `/databases` 路由 | 1. `main.tsx` 从 2 个路由（列表 + 详情）简化为 1 个；2. `DatabaseWorkspace` 组件内部管理选中状态，无需路由参数；3. 书签/直接访问 `/databases/interview_db` 行为变化 |
+| 原因 | 统一工作空间设计：单页应用，无需页面跳转 | 详情页变为工作空间的选中状态，非独立路由 |
+| 处理 | 用户工作流调整：选择数据库 → 更新内部状态，非 URL 导航 | 保留 `/` → `/databases` 重定向，移除 `/databases/:name` 路由 |
+
+### Phase 4.8 验证测试
+
+| 测试项 | 结果 | 说明 |
+|--------|------|------|
+| 主键标识显示 | ✅ | Schema 树正确显示 PK 标签 |
+| 非主键列 | ✅ | 无 PK 标签，非空标签正确显示 |
+| 空数据库 | ✅ | empty_db 无错误，正确显示 "No metadata" |
+| 工作空间布局 | ✅ | 三栏布局正确渲染，宽度符合规范 |
+| 英文文本 | ✅ | 无遗留中文，dayjs locale 正确 |
+| API 调用 | ✅ | `getDb` 替代 `refreshDb`，功能正常 |
+| 路由导航 | ✅ | `/` → `/databases` 重定向正常 |
+
+**无新增 Bug - Phase 4.8 UI/UX 重构完成**
+

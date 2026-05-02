@@ -729,3 +729,89 @@ API 路由命名重构完成：
 
 **所有路由已统一为 `/databases`，语义更清晰。**
 
+
+## Phase 4.8 UI/UX 重构完成工作总结
+
+### 概览：统一工作空间 + 国际化改进
+
+| 维度 | 内容 |
+|------|------|
+| **目标** | 重构为统一的三栏工作空间布局，全站英文化 |
+| **优先级** | P1 - 用户体验优化 |
+| **变更文件** | 13 个文件 |
+
+### (1) 后端变更 (4个文件)
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `api/v1/databases.py` | 🔧 移除 `refresh_database` 端点 | 统一到 `get_database`，简化 API |
+| `api/v1/databases.py` | 🔧 `get_database` 改为 `force_refresh=True` | 每次访问获取最新元数据 |
+| `models/database.py` | ✨ 添加 `is_primary_key: bool` 字段 | 列元数据支持主键标识 |
+| `models/metadata.py` | ✨ 添加 `is_primary_key: bool` 字段 | 内部模型同步更新 |
+| `services/metadata.py` | 🔧 SQL 查询添加主键信息 JOIN | JOIN `table_constraints` + `key_column_usage` |
+
+### (2) 前端组件变更 (7个文件)
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `database-workspace.tsx` | ✨ 新增 | 统一三栏工作空间（260px + 380px + flex） |
+| `database-list.tsx` | 🎨 重构样式 + 🌐 英文化 | 卡片式布局，选中高亮，英文化所有文本 |
+| `sql-editor.tsx` | 🔧 移除执行按钮 | 简化组件，执行按钮移至父组件 |
+| `result-table.tsx` | 🔧 移除统计头部 + 🌐 英文化 | 列名大写，简化信息显示 |
+| `schema-tree.tsx` | 🎨 重构样式 + 🌐 英文化 | 主键/非空标签样式重构，树节点简化 |
+| `database-detail.tsx` | 🌐 英文化 + 🔧 API 调用 | 使用 `getDb` 替代 `refreshDb` |
+| `main.tsx` | 🔧 路由重构 | 单一路由 `/databases` → DatabaseWorkspace |
+
+### (3) 其他前端文件 (4个文件)
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `services/api.ts` | 🗑️ 删除 `refreshDb` 函数 | API 简化 |
+| `types/index.ts` | ✨ 添加 `isPrimaryKey?: boolean` | TypeScript 类型同步 |
+| `index.css` | 🎨 添加全局样式 | Schema 树样式，搜索框边框色，标题颜色 |
+
+### (4) 统一工作空间布局
+
+| 栏位 | 宽度 | 内容 |
+|------|------|------|
+| 左栏 | 260px | 数据库列表 + 添加按钮 |
+| 中栏 | 380px | Schema 树 + 搜索框 + 刷新按钮 |
+| 右栏 | flex (自适应) | 查询编辑器 + 结果表格 |
+
+### (5) 设计系统规范
+
+| 元素 | 规范 |
+|------|------|
+| 主色调 | `#B8860B` (暗金色) |
+| 标题颜色 | `#1E1E1E` (深灰) |
+| 数据库名称 | `uppercase()` |
+| 表格列名 | `uppercase()` |
+| 数据类型标签 | `uppercase()` + 边框 + 白底 |
+| 主键标签 | `PK` + 粉红底 `#FFE6E6` |
+| 非空标签 | `NOT NULL` + 紫底 `#f0e6fa` |
+
+### (6) 国际化改进
+
+| 之前 | 之后 |
+|------|------|
+| 中文文本 | 全部英文化 |
+| dayjs locale `zh-cn` | `en` |
+| 所有按钮/提示/错误信息 | 英文 |
+
+### (7) API 变更
+
+| 变更类型 | 详情 |
+|----------|------|
+| 移除端点 | `POST /api/v1/databases/{name}/refresh` |
+| 行为变更 | `GET /api/v1/databases/{name}` 现在总是返回最新元数据 |
+
+### (8) 可交付结论
+
+Phase 4.8 UI/UX 重构工作全部完成：
+- 统一工作空间：单页应用体验，无需页面跳转
+- 设计系统：暗金色主题，大写规范，简洁标签
+- 国际化：全站英文化
+- API 简化：移除冗余 refresh 端点
+
+**UI/UX 达到生产级可用标准。**
+

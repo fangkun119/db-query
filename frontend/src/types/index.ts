@@ -3,6 +3,7 @@ export interface ColumnMeta {
   dataType: string;
   isNullable: boolean;
   defaultValue?: string;
+  isPrimaryKey?: boolean;
 }
 
 export interface TableMeta {

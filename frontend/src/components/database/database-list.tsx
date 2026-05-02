@@ -1,40 +1,42 @@
 import React from 'react';
-import { Badge, Button, Typography, Space, Popconfirm, Tag } from 'antd';
+import { Button, Typography, Space, Popconfirm, Tag } from 'antd';
 import { DeleteOutlined, DatabaseOutlined } from '@ant-design/icons';
 import type { DatabaseSummary } from '../../types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/zh-cn';
+import 'dayjs/locale/en';
 
 dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
+dayjs.locale('en');
 
 const { Text } = Typography;
 
 interface DatabaseListProps {
   databases: DatabaseSummary[];
+  selectedName?: string;
   onDelete: (name: string) => void;
   onClick: (name: string) => void;
 }
 
 const statusConfig: Record<string, { color: string; text: string }> = {
-  active: { color: 'success', text: '活跃' },
-  error: { color: 'error', text: '错误' },
+  error: { color: 'error', text: 'Error' },
 };
 
-export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete, onClick }) => {
+export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedName, onDelete, onClick }) => {
   const handleDelete = (name: string, e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(name);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px' }}>
       {databases.map((db) => {
-        const statusInfo = statusConfig[db.status] || { color: 'default', text: db.status };
+        const statusInfo = statusConfig[db.status];
         const lastRefreshed = db.lastRefreshedAt
           ? dayjs(db.lastRefreshedAt).fromNow()
-          : '从未刷新';
+          : 'Never';
+
+        const isSelected = db.name === selectedName;
 
         return (
           <div
@@ -44,52 +46,66 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, onDelete,
               cursor: 'pointer',
               padding: '16px',
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               gap: '12px',
-              borderBottom: '1px solid #f0f0f0',
+              borderRadius: '8px',
               transition: 'background-color 0.2s',
+              backgroundColor: isSelected ? '#E8F4FD' : '#fff',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fafafa'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            onMouseEnter={(e) => {
+              if (!isSelected) e.currentTarget.style.backgroundColor = '#fafafa';
+            }}
+            onMouseLeave={(e) => {
+              if (!isSelected) e.currentTarget.style.backgroundColor = '#fff';
+            }}
             className="database-list-item"
           >
-            <DatabaseOutlined style={{ fontSize: '24px', color: '#1890ff', marginTop: '4px', flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <Space>
-                <Text strong>{db.name}</Text>
-                <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
-              </Space>
-              <Space orientation="vertical" size="small" style={{ width: '100%', marginTop: '4px' }}>
-                <Text type="secondary">{db.dbType}</Text>
+              {/* First row: Icon + Database Name + Delete Button */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <Space>
-                  <Badge count={db.tableCount} showZero color="blue" />
-                  <Text type="secondary">个表</Text>
-                  <Badge count={db.viewCount} showZero color="green" />
-                  <Text type="secondary">个视图</Text>
+                  <DatabaseOutlined style={{ fontSize: '16px', color: '#333333' }} />
+                  <Text strong style={{ fontSize: '14px', fontWeight: 600, fontFamily: 'sans-serif', color: '#333333' }}>
+                    {db.name.toUpperCase()}
+                  </Text>
+                  {statusInfo && (
+                    <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
+                  )}
                 </Space>
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                  最后刷新: {lastRefreshed}
+                <Popconfirm
+                  title="Delete Connection"
+                  description="Are you sure you want to delete this database connection?"
+                  onConfirm={(e) => {
+                    if (e) {
+                      handleDelete(db.name, e as React.MouseEvent);
+                    }
+                  }}
+                  okText="Confirm"
+                  cancelText="Cancel"
+                >
+                  <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ color: '#DC3545' }}
+                  />
+                </Popconfirm>
+              </div>
+              {/* Second row: Info */}
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <Text type="secondary" style={{ fontSize: '14px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
+                  {db.dbType}
+                </Text>
+                <Text type="secondary" style={{ fontSize: '14px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
+                  {db.tableCount} tables, {db.viewCount} views
+                </Text>
+                <Text type="secondary" style={{ fontSize: '14px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
+                  Last updated: {lastRefreshed}
                 </Text>
               </Space>
             </div>
-            <Popconfirm
-              title="删除连接"
-              description="确定要删除这个数据库连接吗？"
-              onConfirm={(e) => {
-                if (e) {
-                  handleDelete(db.name, e as React.MouseEvent);
-                }
-              }}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </Popconfirm>
           </div>
         );
       })}

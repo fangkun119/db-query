@@ -1,6 +1,5 @@
 import React from 'react';
-import { Table, Alert, Space, Typography } from 'antd';
-import { ClockCircleOutlined } from '@ant-design/icons';
+import { Table, Alert, Typography } from 'antd';
 import type { QueryResult } from '../../types';
 
 const { Text } = Typography;
@@ -20,7 +19,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
         height: '100%',
         color: '#8c8c8c'
       }}>
-        执行查询后结果将显示在这里
+        Results will be displayed here after query execution
       </div>
     );
   }
@@ -34,7 +33,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
         height: '100%',
         color: '#8c8c8c'
       }}>
-        正在执行查询...
+        Executing query...
       </div>
     );
   }
@@ -43,9 +42,9 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
     return null;
   }
 
-  // Generate table columns from query result
+  // Generate table columns from query result (uppercase column names)
   const columns = result.columnNames.map((name) => ({
-    title: name,
+    title: name.toUpperCase(),
     dataIndex: name,
     key: name,
     width: 150,
@@ -69,23 +68,10 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Result header with stats */}
-      <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Space size="middle">
-          <Text>
-            共 <Text strong>{result.totalCount}</Text> 行
-          </Text>
-          <Space size="small">
-            <ClockCircleOutlined />
-            <Text type="secondary">{result.executionTimeMs} ms</Text>
-          </Space>
-        </Space>
-      </div>
-
-      {/* Truncation warning */}
-      {result.isTruncated && (
+      {/* Truncation warning - only show if rows exceed 1000 */}
+      {result.isTruncated && result.totalCount >= 1000 && (
         <Alert
-          message={`仅显示前 ${result.totalCount} 行（已自动添加 LIMIT 限制）`}
+          message={`Max ${result.totalCount} rows displayed (LIMIT automatically set)`}
           type="warning"
           showIcon
           style={{ marginBottom: '12px' }}
@@ -100,7 +86,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
           pagination={{
             pageSize: 50,
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
+            showTotal: (total) => `Total ${total} row${total !== 1 ? 's' : ''}`,
             size: 'small',
           }}
           size="small"

@@ -4,8 +4,7 @@ import { Refine } from '@refinedev/core'
 import routerProvider from '@refinedev/react-router'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router'
 import { dataProvider } from './providers/data-provider'
-import { DatabasesPage } from './pages/databases'
-import { DatabaseDetailPage } from './pages/database-detail'
+import { DatabaseWorkspace } from './components/database/database-workspace'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
@@ -21,8 +20,7 @@ createRoot(document.getElementById('root')!).render(
       >
         <Routes>
           <Route path="/" element={<Navigate to="/databases" replace />} />
-          <Route path="/databases" element={<DatabasesPage />} />
-          <Route path="/databases/:name" element={<DatabaseDetailPage />} />
+          <Route path="/databases" element={<DatabaseWorkspace />} />
         </Routes>
       </Refine>
     </BrowserRouter>

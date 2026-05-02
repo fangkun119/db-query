@@ -11,6 +11,7 @@ class ColumnMetadata(BaseModel):
     is_nullable: bool
     default_value: Optional[str] = None
     ordinal_position: int
+    is_primary_key: bool = False
 
 
 class TableMetadata(BaseModel):
@@ -29,6 +30,7 @@ class ColumnMetadataResponse(BaseModel):
     data_type: str
     is_nullable: bool
     default_value: Optional[str] = None
+    is_primary_key: bool = False
 
 
 class TableMetadataResponse(BaseModel):

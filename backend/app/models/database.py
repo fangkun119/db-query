@@ -29,6 +29,7 @@ class ColumnMetadataResponse(BaseModel):
     data_type: str
     is_nullable: bool
     default_value: Optional[str] = None
+    is_primary_key: bool = False
 
 
 class TableMetadataResponse(BaseModel):
