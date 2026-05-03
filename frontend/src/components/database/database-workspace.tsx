@@ -4,10 +4,10 @@ import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOu
 import DatabaseList from './database-list';
 import DatabaseForm from './database-form';
 import SchemaTree from '../schema/schema-tree';
-import { SqlEditor } from '../editor';
+import { SqlEditor, NLInput } from '../editor';
 import { ResultTable } from '../results/result-table';
 import type { DatabaseSummary, DatabaseDetail, QueryResult } from '../../types';
-import { listDbs, deleteDb, getDb, executeQuery } from '../../services/api';
+import { listDbs, deleteDb, getDb, executeQuery, naturalQuery } from '../../services/api';
 import { handleApiError } from '../../utils/errors';
 
 const { Title, Text } = Typography;
@@ -43,6 +43,8 @@ export const DatabaseWorkspace: React.FC = () => {
   const [sqlQuery, setSqlQuery] = useState('');
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [executingQuery, setExecutingQuery] = useState(false);
+  const [generatingSql, setGeneratingSql] = useState(false);
+  const [nlError, setNlError] = useState<string | null>(null);
 
   const loadDatabases = useCallback(async () => {
     setLoadingDatabases(true);
@@ -126,6 +128,27 @@ export const DatabaseWorkspace: React.FC = () => {
       message.error(handleApiError(error, 'Query execution failed'));
     } finally {
       setExecutingQuery(false);
+    }
+  };
+
+  const handleNaturalQuery = async (prompt: string) => {
+    if (!selectedDatabase) return;
+
+    setGeneratingSql(true);
+    setNlError(null);
+    try {
+      const result = await naturalQuery(selectedDatabase.name, { prompt });
+      setSqlQuery(result.sql);
+      message.success('SQL generated successfully');
+      if (result.explanation) {
+        message.info(`Explanation: ${result.explanation}`);
+      }
+    } catch (error: unknown) {
+      const errorMsg = handleApiError(error, 'Failed to generate SQL');
+      setNlError(errorMsg);
+      message.error(errorMsg);
+    } finally {
+      setGeneratingSql(false);
     }
   };
 
@@ -239,6 +262,17 @@ export const DatabaseWorkspace: React.FC = () => {
         <Column span={1} style={{ backgroundColor: '#fff' }}>
           {selectedDatabase ? (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              {/* Natural Language Input Section */}
+              <div style={{ borderBottom: '1px solid #f0f0f0', backgroundColor: '#fafafa' }}>
+                <div style={{ padding: '16px' }}>
+                  <NLInput
+                    onGenerate={handleNaturalQuery}
+                    loading={generatingSql}
+                    error={nlError}
+                  />
+                </div>
+              </div>
+
               {/* Query Editor Section */}
               <div style={{ borderBottom: '1px solid #f0f0f0', backgroundColor: '#fff' }}>
                 <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -102,14 +102,14 @@
 
 ### Prerequisites
 
-- [ ] T030.5 [US3] Configure OpenAI API credentials in `~/db_query.env` — create user-level environment file with OPENAI_API_KEY, OPENAI_API_ENDPOINT, OPENAI_MODEL fields; update `backend/app/config.py` to use Path.home() / "db_query.env" as env_file location
+- [X] T030.5 [US3] Configure OpenAI API credentials in `~/db_query.env` — create user-level environment file with OPENAI_API_KEY, OPENAI_API_ENDPOINT, OPENAI_MODEL fields; update `backend/app/config.py` to use Path.home() / "db_query.env" as env_file location
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Create NL to SQL service in `backend/app/services/nl_to_sql.py` — build DDL-style schema context from metadata, call OpenAI client.beta.chat.completions.parse() with SQLGenerationResult response_format (temperature=0, max_retries=2), validate generated SQL via validator service, return NLQueryResponse; map OpenAI exceptions to Chinese messages per research.md R4
-- [ ] T032 [US3] Add natural query endpoint in `backend/app/api/v1/databases.py` — POST /dbs/{name}/query/natural accepting NaturalQueryRequest, fetch metadata from SQLite, call NL service, validate SQL before returning; error responses per contracts/api.md
-- [ ] T033 [P] [US3] Create NL input component in `frontend/src/components/editor/nl-input.tsx` — Ant Design Input.TextArea for Chinese NL question, "生成 SQL" button with loading state, error display for generation failures
-- [ ] T034 [US3] Integrate NL query in database detail page `frontend/src/pages/database-detail.tsx` — add NlInput above SqlEditor, on successful generation insert SQL into editor value, on validation error show error message without modifying editor
+- [X] T031 [US3] Create NL to SQL service in `backend/app/services/nl_to_sql.py` — build DDL-style schema context from metadata, call OpenAI client.beta.chat.completions.parse() with SQLGenerationResult response_format (temperature=0, max_retries=2), validate generated SQL via validator service, return NLQueryResponse; map OpenAI exceptions to Chinese messages per research.md R4
+- [X] T032 [US3] Add natural query endpoint in `backend/app/api/v1/databases.py` — POST /dbs/{name}/query/natural accepting NaturalQueryRequest, fetch metadata from SQLite, call NL service, validate SQL before returning; error responses per contracts/api.md
+- [X] T033 [P] [US3] Create NL input component in `frontend/src/components/editor/nl-input.tsx` — Ant Design Input.TextArea for Chinese NL question, "生成 SQL" button with loading state, error display for generation failures
+- [X] T034 [US3] Integrate NL query in database workspace `frontend/src/components/database/database-workspace.tsx` — add NlInput above SqlEditor, on successful generation insert SQL into editor value, on validation error show error message without modifying editor
 
 **Checkpoint**: All user stories complete — full NL→SQL→results workflow works end-to-end
 

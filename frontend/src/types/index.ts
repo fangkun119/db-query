@@ -44,6 +44,15 @@ export interface QueryRequest {
   sql: string;
 }
 
+export interface NaturalQueryRequest {
+  prompt: string;
+}
+
+export interface NLQueryResponse {
+  sql: string;
+  explanation?: string;
+}
+
 export interface CreateConnectionRequest {
   url: string;
 }

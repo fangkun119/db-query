@@ -4,6 +4,8 @@ import type {
   DatabaseDetail,
   QueryResult,
   QueryRequest,
+  NaturalQueryRequest,
+  NLQueryResponse,
   CreateConnectionRequest,
 } from '../types';
 
@@ -38,6 +40,11 @@ export const deleteDb = async (name: string): Promise<void> => {
 
 export const executeQuery = async (name: string, data: QueryRequest): Promise<QueryResult> => {
   const response = await api.post<QueryResult>(`/databases/${encodeURIComponent(name)}/query`, data);
+  return response.data;
+};
+
+export const naturalQuery = async (name: string, data: NaturalQueryRequest): Promise<NLQueryResponse> => {
+  const response = await api.post<NLQueryResponse>(`/databases/${encodeURIComponent(name)}/query/natural`, data);
   return response.data;
 };
 
