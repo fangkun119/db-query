@@ -226,3 +226,93 @@
 **Phase 4.9 代码审查与测试完善完成 - 所有测试通过**
 
 
+## Phase 4.9a
+
+### Bug 4.9a-001 RESULT TABLE 双重滚动条问题 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 查询结果行数多时出现两个滚动条，翻页组件被推出可视区域 | 1. 用户反馈执行 `SELECT * FROM candidates;` 后出现双重滚动条；2. 检查 `database-workspace.tsx` L279 和 `result-table.tsx` L82，发现两个容器都设置了 `overflow: auto`；3. 外层容器 `overflow: auto` + 内层 Table `scroll.y` 产生双重滚动 |
+| 原因 | `overflow: auto` 导致外层容器在内容超出时产生滚动条，与 Table 内部滚动冲突 | 外层容器：`padding: '16px', height: 'calc(100% - 45px)', overflow: 'auto'`；Table: `scroll.y: 'calc(100vh - 450px)'`；两层滚动导致翻页组件被推到可视区域外 |
+| 修复步骤 | 1. 外层容器改为 `overflow: hidden`；2. 内层容器改为 `overflow: hidden`；3. Table 移除固定 `scroll.y`，使用动态计算 | 初次修复移除了 `scroll.y`，导致表格无内部滚动，翻页组件仍不可见 |
+
+### Bug 4.9a-002 翻页组件不可见 - 动态高度计算问题 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 移除 Table `scroll.y` 后，表格显示所有行，翻页组件被推到可视区域外 | 1. 验证：执行查询后表格展开显示所有行，pagination 不在可视区域；2. 分析：Ant Design Table 无 `scroll.y` 时，表体无高度限制，自然扩展；3. 确认需要设置 `scroll.y` 让表体产生滚动 |
+| 原因 | Ant Design Table 的 `scroll.y` 需要具体数值，不能使用 flex 百分比 | Table 组件要求 `scroll.y` 为像素值（如 `300px`），不接受 `'100%'` 或 `'auto'`；硬编码 `calc(100vh - 450px)` 不适应窗口缩放和动态内容 |
+| 修复 | 使用 `useRef` + `useEffect` + `window.addEventListener('resize')` 动态计算 `scroll.y` | 计算公式：`containerHeight - alertHeight - paginationHeight - headerHeight - padding`；窗口缩放时重新计算，但仍依赖固定像素值 |
+
+### Bug 4.9a-003 窗口缩放时翻页组件不可见 - 硬编码像素值问题 (前端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 浏览器窗口变小后，翻页组件不可见 | 1. Playwright 测试：`browser_resize({ width: 1024, height: 600 })` 后翻页组件被遮挡；2. 分析：`calc(100vh - 450px)` 中的 450px 是硬编码的固定值；3. 如果实际 header 高度不同（如 rowCount 文本换行），计算会不准确 |
+| 原因 | `database-workspace.tsx` 中 ResultTable 容器使用 `height: calc(100% - 45px)`，45px 是硬编码估计值 | 45px 估计值包括 header 的 padding 和内容高度，但实际高度可能因内容长度（ rowCount 文本换行）而变化；窗口缩小时，固定计算无法自适应 |
+| 修复方案 | 纯 Flex 布局 + ResizeObserver 实时监听 | 1. Results Section 改用 `flexDirection: 'column'`，Header 设置 `flexShrink: 0`；2. ResultTable 容器设置 `flex: 1, minHeight: 0` 自动占据剩余空间；3. Table Wrapper 使用 ResizeObserver 监听容器尺寸变化，动态计算 `scroll.y` |
+
+### 最终修复方案：纯 Flex 布局 + ResizeObserver
+
+**database-workspace.tsx 变更**:
+```tsx
+{/* Results Section */}
+<div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#fff' }}>
+  <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+    {/* Header - 自动高度 */}
+  </div>
+  <div style={{ padding: '16px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+    <ResultTable result={queryResult} loading={executingQuery} />
+  </div>
+</div>
+```
+
+**result-table.tsx 变更**:
+```tsx
+// 使用 ResizeObserver 动态计算 table scroll.y
+const tableWrapperRef = useRef<HTMLDivElement>(null);
+const [tableScrollY, setTableScrollY] = useState<number>(0);
+
+useEffect(() => {
+  const updateTableHeight = () => {
+    const wrapper = tableWrapperRef.current;
+    if (!wrapper) return;
+    
+    const wrapperHeight = wrapper.clientHeight;
+    const tableHeader = wrapper.querySelector('.ant-table-thead');
+    const pagination = wrapper.querySelector('.ant-pagination');
+    
+    const headerHeight = tableHeader ? tableHeader.clientHeight : 40;
+    const paginationHeight = pagination ? pagination.clientHeight : 55;
+    
+    const scrollY = Math.max(wrapperHeight - headerHeight - paginationHeight - 16, 200);
+    setTableScrollY(scrollY);
+  };
+  
+  const resizeObserver = new ResizeObserver(updateTableHeight);
+  resizeObserver.observe(tableWrapperRef.current);
+  
+  return () => resizeObserver.disconnect();
+}, [result]);
+```
+
+### 验证结果
+
+| 测试项 | 结果 | 说明 |
+|--------|------|------|
+| 单元测试 | ✅ 42/42 通过 | 修改后无回归 |
+| 大窗口 (1366x768) | ✅ | 翻页组件可见 |
+| 小窗口 (1024x600) | ✅ | 翻页组件可见 |
+| 窗口缩放 | ✅ | ResizeObserver 自动重新计算 |
+
+### 核心改进
+
+| 特性 | 之前 | 之后 |
+|------|------|------|
+| 布局方式 | 硬编码高度 `calc(100% - 45px)` | 纯 Flex `flex: 1, minHeight: 0` |
+| Header | 固定估计空间 | `flexShrink: 0` 自动适应内容 |
+| scroll.y 计算 | `calc(100vh - 450px)` | ResizeObserver 实时计算 |
+| 窗口缩放 | 依赖 `resize` 事件 | ResizeObserver 自动响应 |
+| 翻页可见性 | 窗口小时被遮挡 | 始终固定在底部 |
+
+

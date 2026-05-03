@@ -265,8 +265,8 @@ export const DatabaseWorkspace: React.FC = () => {
               </div>
 
               {/* Results Section */}
-              <div style={{ flex: 1, overflow: 'hidden', backgroundColor: '#fff' }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#fff' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                   <Title level={5} style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
                     RESULTS
                   </Title>
@@ -276,7 +276,7 @@ export const DatabaseWorkspace: React.FC = () => {
                     </Text>
                   )}
                 </div>
-                <div style={{ padding: '16px', height: 'calc(100% - 45px)', overflow: 'auto' }}>
+                <div style={{ padding: '16px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
                   <ResultTable result={queryResult} loading={executingQuery} />
                 </div>
               </div>
