@@ -100,6 +100,10 @@
 
 **Independent Test**: Connect to DB → type "显示所有用户的订单数量" → verify SQL is generated and inserted into editor → execute and see results
 
+### Prerequisites
+
+- [ ] T030.5 [US3] Configure OpenAI API credentials in `~/db_query.env` — create user-level environment file with OPENAI_API_KEY, OPENAI_API_ENDPOINT, OPENAI_MODEL fields; update `backend/app/config.py` to use Path.home() / "db_query.env" as env_file location
+
 ### Implementation for User Story 3
 
 - [ ] T031 [US3] Create NL to SQL service in `backend/app/services/nl_to_sql.py` — build DDL-style schema context from metadata, call OpenAI client.beta.chat.completions.parse() with SQLGenerationResult response_format (temperature=0, max_retries=2), validate generated SQL via validator service, return NLQueryResponse; map OpenAI exceptions to Chinese messages per research.md R4
@@ -207,11 +211,11 @@ Task T022: "Create schema tree component in frontend/src/components/schema/schem
 | Phase 2: Foundational | 11 | Core backend + frontend infrastructure |
 | Phase 3: US1 (P1) | 9 | Database connection + metadata explorer |
 | Phase 4: US2 (P2) | 6 | SQL query execution |
-| Phase 5: US3 (P3) | 4 | Natural language to SQL |
+| Phase 5: US3 (P3) | 5 | Natural language to SQL (1 prerequisite + 4 implementation) |
 | Phase 6: Polish | 3 | Cross-cutting concerns |
-| **Total** | **37** | |
+| **Total** | **38** | |
 
-- Task count per user story: US1=9, US2=6, US3=4
+- Task count per user story: US1=9, US2=6, US3=5
 - Parallel opportunities: 15 tasks marked [P]
 - Independent test criteria: Each user story has a checkpoint with test instructions
 - MVP scope: Phase 1 + Phase 2 + Phase 3 = 24 tasks

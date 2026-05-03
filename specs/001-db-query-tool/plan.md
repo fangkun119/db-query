@@ -10,6 +10,7 @@ A web-based database query tool that allows users to connect to PostgreSQL datab
 ## Technical Context
 
 **Language/Version**: Python 3.14 (managed by uv), TypeScript 5.0+ (strict mode)
+**Configuration**: User-level environment file at ~/db_query.env (OpenAI API keys, app settings)
 **Primary Dependencies**: FastAPI 0.136+, SQLAlchemy (async + aiosqlite + asyncpg), sqlglot, openai SDK, React 19, refine 5, Ant Design 6, Tailwind CSS v4, Monaco Editor
 **Storage**: Local SQLite (~/.db_query/db_query.db) for connections/metadata; user PostgreSQL databases for queries
 **Testing**: pytest (backend), vitest + React Testing Library (frontend)
