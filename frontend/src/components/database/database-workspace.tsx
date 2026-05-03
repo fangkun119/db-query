@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Space, Typography, Input, message, Spin, Empty } from 'antd';
+import { Button, Space, Typography, Input, message, Spin, Empty, Tabs } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import DatabaseList from './database-list';
 import DatabaseForm from './database-form';
@@ -43,8 +43,9 @@ export const DatabaseWorkspace: React.FC = () => {
   const [sqlQuery, setSqlQuery] = useState('');
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [executingQuery, setExecutingQuery] = useState(false);
-  const [generatingSql, setGeneratingSql] = useState(false);
   const [nlError, setNlError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'manual' | 'natural'>('manual');
+  const [nlPrompt, setNlPrompt] = useState('');
 
   const loadDatabases = useCallback(async () => {
     setLoadingDatabases(true);
@@ -117,39 +118,53 @@ export const DatabaseWorkspace: React.FC = () => {
   };
 
   const handleExecuteQuery = async () => {
-    if (!selectedDatabase || !sqlQuery.trim()) return;
+    if (!selectedDatabase) return;
 
-    setExecutingQuery(true);
-    try {
-      const result = await executeQuery(selectedDatabase.name, { sql: sqlQuery });
-      setQueryResult(result);
-      message.success(`Query executed successfully, ${result.totalCount} rows returned`);
-    } catch (error: unknown) {
-      message.error(handleApiError(error, 'Query execution failed'));
-    } finally {
-      setExecutingQuery(false);
+    if (activeTab === 'natural') {
+      // Natural Language mode: generate SQL then execute
+      if (!nlPrompt.trim()) {
+        message.warning('Please enter a natural language question');
+        return;
+      }
+      setExecutingQuery(true);
+      try {
+        // First generate SQL from natural language
+        const nlResult = await naturalQuery(selectedDatabase.name, { prompt: nlPrompt });
+        setSqlQuery(nlResult.sql);
+        if (nlResult.explanation) {
+          message.info(`Explanation: ${nlResult.explanation}`);
+        }
+        // Then execute the generated SQL
+        const result = await executeQuery(selectedDatabase.name, { sql: nlResult.sql });
+        setQueryResult(result);
+        message.success(`Query executed successfully, ${result.totalCount} rows returned`);
+      } catch (error: unknown) {
+        message.error(handleApiError(error, 'Query execution failed'));
+      } finally {
+        setExecutingQuery(false);
+      }
+    } else {
+      // Manual SQL mode: execute SQL directly
+      if (!sqlQuery.trim()) {
+        message.warning('Please enter a SQL query');
+        return;
+      }
+      setExecutingQuery(true);
+      try {
+        const result = await executeQuery(selectedDatabase.name, { sql: sqlQuery });
+        setQueryResult(result);
+        message.success(`Query executed successfully, ${result.totalCount} rows returned`);
+      } catch (error: unknown) {
+        message.error(handleApiError(error, 'Query execution failed'));
+      } finally {
+        setExecutingQuery(false);
+      }
     }
   };
 
   const handleNaturalQuery = async (prompt: string) => {
-    if (!selectedDatabase) return;
-
-    setGeneratingSql(true);
+    setNlPrompt(prompt);
     setNlError(null);
-    try {
-      const result = await naturalQuery(selectedDatabase.name, { prompt });
-      setSqlQuery(result.sql);
-      message.success('SQL generated successfully');
-      if (result.explanation) {
-        message.info(`Explanation: ${result.explanation}`);
-      }
-    } catch (error: unknown) {
-      const errorMsg = handleApiError(error, 'Failed to generate SQL');
-      setNlError(errorMsg);
-      message.error(errorMsg);
-    } finally {
-      setGeneratingSql(false);
-    }
   };
 
   const filteredTables = selectedDatabase
@@ -262,18 +277,7 @@ export const DatabaseWorkspace: React.FC = () => {
         <Column span={1} style={{ backgroundColor: '#fff' }}>
           {selectedDatabase ? (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              {/* Natural Language Input Section */}
-              <div style={{ borderBottom: '1px solid #f0f0f0', backgroundColor: '#fafafa' }}>
-                <div style={{ padding: '16px' }}>
-                  <NLInput
-                    onGenerate={handleNaturalQuery}
-                    loading={generatingSql}
-                    error={nlError}
-                  />
-                </div>
-              </div>
-
-              {/* Query Editor Section */}
+              {/* Query Editor Section with Tabs */}
               <div style={{ borderBottom: '1px solid #f0f0f0', backgroundColor: '#fff' }}>
                 <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Title level={5} style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#262626' }}>
@@ -283,17 +287,42 @@ export const DatabaseWorkspace: React.FC = () => {
                     icon={<PlayCircleOutlined style={{ fontSize: '16px' }} />}
                     onClick={handleExecuteQuery}
                     loading={executingQuery}
-                    disabled={!sqlQuery.trim()}
+                    disabled={activeTab === 'manual' ? !sqlQuery.trim() : !nlPrompt.trim()}
                     style={{ backgroundColor: '#B8860B', color: '#FFFFFF', border: 'none', fontWeight: 600, height: '44px', padding: '0 20px', fontSize: '14px' }}
                   >
                     Execute Query
                   </Button>
                 </div>
-                <div style={{ padding: '16px', height: '300px' }}>
-                  <SqlEditor
-                    value={sqlQuery}
-                    onChange={setSqlQuery}
-                    placeholder="Enter SQL query... e.g., SELECT * FROM users LIMIT 10"
+                <div style={{ padding: '16px' }}>
+                  <Tabs
+                    activeKey={activeTab}
+                    onChange={(key) => setActiveTab(key as 'manual' | 'natural')}
+                    items={[
+                      {
+                        key: 'manual',
+                        label: 'MANUAL SQL',
+                        children: (
+                          <div style={{ height: '280px' }}>
+                            <SqlEditor
+                              value={sqlQuery}
+                              onChange={setSqlQuery}
+                              placeholder="Enter SQL query... e.g., SELECT * FROM users LIMIT 10"
+                            />
+                          </div>
+                        ),
+                      },
+                      {
+                        key: 'natural',
+                        label: 'NATURAL LANGUAGE',
+                        children: (
+                          <NLInput
+                            onGenerate={handleNaturalQuery}
+                            loading={executingQuery}
+                            error={nlError}
+                          />
+                        ),
+                      },
+                    ]}
                   />
                 </div>
               </div>
