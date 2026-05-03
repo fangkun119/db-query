@@ -10,7 +10,7 @@ class TestExecuteQueryValidation:
     @pytest.mark.asyncio
     async def test_execute_query_validation_error_non_select(self):
         with patch("app.services.query.ValidatorService.validate_and_enrich") as mock_validate:
-            mock_validate.side_effect = ValidationError("仅支持 SELECT 查询")
+            mock_validate.side_effect = ValidationError("Only SELECT queries are supported")
 
             result, error = await QueryService.execute_query(
                 "postgresql://localhost/test",
@@ -19,12 +19,12 @@ class TestExecuteQueryValidation:
             )
 
             assert result is None
-            assert error == "仅支持 SELECT 查询"
+            assert error == "Only SELECT queries are supported"
 
     @pytest.mark.asyncio
     async def test_execute_query_validation_error_syntax(self):
         with patch("app.services.query.ValidatorService.validate_and_enrich") as mock_validate:
-            mock_validate.side_effect = ValidationError("语法错误 (行 1, 列 6): 期望 SELECT")
+            mock_validate.side_effect = ValidationError("Syntax error (line 1, column 6): SELECT expected")
 
             result, error = await QueryService.execute_query(
                 "postgresql://localhost/test",
@@ -33,12 +33,12 @@ class TestExecuteQueryValidation:
             )
 
             assert result is None
-            assert "语法错误" in error
+            assert "Syntax error" in error
 
     @pytest.mark.asyncio
     async def test_execute_query_validation_error_empty(self):
         with patch("app.services.query.ValidatorService.validate_and_enrich") as mock_validate:
-            mock_validate.side_effect = ValidationError("SQL 查询不能为空")
+            mock_validate.side_effect = ValidationError("SQL query cannot be empty")
 
             result, error = await QueryService.execute_query(
                 "postgresql://localhost/test",
@@ -47,7 +47,7 @@ class TestExecuteQueryValidation:
             )
 
             assert result is None
-            assert "不能为空" in error
+            assert "cannot be empty" in error
 
 
 class TestExecuteQueryDatabaseErrors:
@@ -77,7 +77,7 @@ class TestExecuteQueryDatabaseErrors:
 
             assert result is None
             assert error is not None
-            assert "查询执行失败" in error
+            assert "Query execution failed" in error
 
 
 class TestTruncationDetection:

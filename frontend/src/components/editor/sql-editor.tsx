@@ -1,6 +1,5 @@
 import React from 'react';
 import Editor from '@monaco-editor/react';
-import type * as Monaco from 'monaco-editor';
 import type { editor } from 'monaco-editor';
 
 interface SqlEditorProps {
@@ -15,7 +14,7 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
   value,
   onChange,
   loading = false,
-  placeholder = '在此输入 SQL 查询语句...\n例如: SELECT * FROM users LIMIT 10',
+  placeholder = 'Enter SQL query here...\ne.g., SELECT * FROM users LIMIT 10',
   readOnly = false,
 }) => {
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {

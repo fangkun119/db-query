@@ -27,7 +27,7 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
       };
 
       await addDb(values.name, request);
-      message.success('数据库连接添加成功');
+      message.success('Database connection added successfully');
       form.resetFields();
       onSuccess();
       onClose();
@@ -35,7 +35,7 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
       if (error && typeof error === 'object' && 'errorFields' in error) {
         // Validation error, do nothing
       } else {
-        message.error(handleApiError(error, '添加失败，请稍后重试'));
+        message.error(handleApiError(error, 'Failed to add, please try again'));
       }
     } finally {
       setLoading(false);
@@ -52,14 +52,14 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
       title={
         <Space>
           <PlusOutlined />
-          <span>添加数据库连接</span>
+          <span>Add Database Connection</span>
         </Space>
       }
       open={open}
       onOk={handleSubmit}
       onCancel={handleCancel}
-      okText="添加"
-      cancelText="取消"
+      okText="Add"
+      cancelText="Cancel"
       confirmLoading={loading}
       width={600}
     >
@@ -69,30 +69,30 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
         autoComplete="off"
       >
         <Form.Item
-          label="连接名称"
+          label="Connection Name"
           name="name"
           rules={[
-            { required: true, message: '请输入连接名称' },
-            { max: 100, message: '连接名称不能超过100个字符' },
-            { pattern: /^[a-zA-Z0-9_-]+$/, message: '连接名称只能包含字母、数字、下划线和连字符' },
+            { required: true, message: 'Please enter a connection name' },
+            { max: 100, message: 'Connection name cannot exceed 100 characters' },
+            { pattern: /^[a-zA-Z0-9_-]+$/, message: 'Connection name can only contain letters, numbers, underscores, and hyphens' },
           ]}
         >
-          <Input placeholder="例如: my-postgres" />
+          <Input placeholder="e.g., my-postgres" />
         </Form.Item>
 
         <Form.Item
-          label="PostgreSQL 连接 URL"
+          label="PostgreSQL Connection URL"
           name="url"
           rules={[
-            { required: true, message: '请输入PostgreSQL连接URL' },
+            { required: true, message: 'Please enter PostgreSQL connection URL' },
             {
               pattern: /^postgresql:\/\/|^postgresql\+asyncpg:\/\//,
-              message: 'URL必须以 postgresql:// 或 postgresql+asyncpg:// 开头'
+              message: 'URL must start with postgresql:// or postgresql+asyncpg://'
             },
           ]}
           extra={
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              格式: postgresql://用户名:密码@主机:端口/数据库名
+              Format: postgresql://username:password@host:port/database
             </Text>
           }
         >
@@ -105,12 +105,12 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
         <Form.Item>
           <Space orientation="vertical" size="small">
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              提示：
+              Tips:
             </Text>
             <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#8c8c8c' }}>
-              <li>连接成功后会自动获取数据库元数据</li>
-              <li>请确保数据库服务可访问</li>
-              <li>连接信息将以明文存储在本地</li>
+              <li>Database metadata will be automatically fetched after successful connection</li>
+              <li>Ensure the database service is accessible</li>
+              <li>Connection information will be stored locally in plain text</li>
             </ul>
           </Space>
         </Form.Item>

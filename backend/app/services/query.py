@@ -93,7 +93,7 @@ class QueryService:
 
         except Exception as e:
             logger.error(f"Query execution failed: {str(e)}")
-            return None, f"查询执行失败：{str(e)}"
+            return None, f"Query execution failed: {str(e)}"
 
         finally:
             if engine:

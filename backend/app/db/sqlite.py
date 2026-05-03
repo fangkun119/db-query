@@ -23,8 +23,8 @@ class DatabaseConnection(Base):
 
 
 _db_path: str | None = None
-_engine: any = None
-_async_session_maker: any = None
+_engine: any | None = None
+_async_session_maker: any | None = None
 
 
 def get_db_path(expand_path: str = "~/.db_query/db_query.db") -> str:

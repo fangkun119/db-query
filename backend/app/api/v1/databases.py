@@ -26,7 +26,7 @@ async def add_database(name: str, request: CreateConnectionRequest) -> DatabaseS
     success, error_msg, response = await ConnectionService.add_connection(name, request)
 
     if not success:
-        if "已存在" in error_msg:
+        if "already exists" in error_msg:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
@@ -39,7 +39,7 @@ async def get_database(name: str) -> DatabaseDetailResponse:
     success, error_msg, response = await MetadataService.get_metadata_with_refresh(name, force_refresh=True)
 
     if not success:
-        if "不存在" in error_msg:
+        if "does not exist" in error_msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
@@ -52,7 +52,7 @@ async def delete_database(name: str) -> None:
     success, error_msg = await ConnectionService.delete_connection(name)
 
     if not success:
-        if "不存在" in error_msg:
+        if "does not exist" in error_msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg)
 
@@ -68,14 +68,14 @@ async def execute_query(name: str, request: QueryRequest) -> QueryResultResponse
     connection = await ConnectionService.get_connection(name)
 
     if not connection:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="数据库连接不存在")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database connection does not exist")
 
     # Execute query
     result, error_msg = await QueryService.execute_query(connection.url, request)
 
     if error_msg:
         # Determine appropriate status code
-        if "仅支持 SELECT" in error_msg or "语法错误" in error_msg:
+        if "Only SELECT" in error_msg or "Syntax error" in error_msg:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 

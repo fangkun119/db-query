@@ -24,13 +24,13 @@ class TestValidateAndEnrich:
         with pytest.raises(ValidationError) as exc_info:
             ValidatorService.validate_and_enrich("", default_limit=1000)
 
-        assert "SQL 查询不能为空" in str(exc_info.value)
+        assert "SQL query cannot be empty" in str(exc_info.value)
 
     def test_whitespace_only_sql(self):
         with pytest.raises(ValidationError) as exc_info:
             ValidatorService.validate_and_enrich("   \n  ", default_limit=1000)
 
-        assert "SQL 查询不能为空" in str(exc_info.value)
+        assert "SQL query cannot be empty" in str(exc_info.value)
 
     def test_multi_statement_rejection(self):
         with pytest.raises(ValidationError) as exc_info:
@@ -39,7 +39,7 @@ class TestValidateAndEnrich:
                 default_limit=1000
             )
 
-        assert "仅支持单条 SQL 查询" in str(exc_info.value)
+        assert "Only single SQL queries are supported" in str(exc_info.value)
 
     def test_trailing_semicolon_allowed(self):
         sql = "SELECT * FROM users;"
@@ -55,7 +55,7 @@ class TestValidateAndEnrich:
                 default_limit=1000
             )
 
-        assert "仅支持 SELECT 查询" in str(exc_info.value)
+        assert "Only SELECT queries are supported" in str(exc_info.value)
 
     def test_insert_rejection(self):
         with pytest.raises(ValidationError) as exc_info:
@@ -64,7 +64,7 @@ class TestValidateAndEnrich:
                 default_limit=1000
             )
 
-        assert "仅支持 SELECT 查询" in str(exc_info.value)
+        assert "Only SELECT queries are supported" in str(exc_info.value)
 
     def test_syntax_error(self):
         with pytest.raises(ValidationError) as exc_info:
@@ -73,7 +73,7 @@ class TestValidateAndEnrich:
                 default_limit=1000
             )
 
-        assert "语法错误" in str(exc_info.value)
+        assert "Syntax error" in str(exc_info.value)
 
     def test_union_allowed(self):
         sql = "SELECT * FROM users UNION SELECT * FROM admins"
@@ -107,10 +107,10 @@ class TestValidateForNlGenerated:
         is_valid, error = ValidatorService.validate_for_nl_generated("DELETE FROM users")
 
         assert is_valid is False
-        assert "仅支持 SELECT" in error
+        assert "Only SELECT" in error
 
     def test_empty_sql(self):
         is_valid, error = ValidatorService.validate_for_nl_generated("")
 
         assert is_valid is False
-        assert "不能为空" in error
+        assert "cannot be empty" in error

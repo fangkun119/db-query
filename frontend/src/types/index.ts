@@ -40,17 +40,8 @@ export interface QueryResult {
   executionTimeMs: number;
 }
 
-export interface NLQueryResponse {
-  sql: string;
-  explanation?: string;
-}
-
 export interface QueryRequest {
   sql: string;
-}
-
-export interface NaturalQueryRequest {
-  prompt: string;
 }
 
 export interface CreateConnectionRequest {

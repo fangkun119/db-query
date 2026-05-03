@@ -44,7 +44,7 @@ describe('Error Utils', () => {
           }
         }
       }
-      expect(handleApiError(error, '操作失败')).toBe('操作失败：Connection failed')
+      expect(handleApiError(error, '操作失败')).toBe('操作失败: Connection failed')
     })
 
     it('should return fallback message when detail is unknown', () => {

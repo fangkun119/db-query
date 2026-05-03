@@ -14,7 +14,7 @@ export function getApiErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
-export function handleApiError(error: unknown, fallbackMessage: string = '操作失败'): string {
+export function handleApiError(error: unknown, fallbackMessage: string = 'Operation failed'): string {
   const message = getApiErrorMessage(error);
-  return message !== 'Unknown error' ? `${fallbackMessage}：${message}` : fallbackMessage;
+  return message !== 'Unknown error' ? `${fallbackMessage}: ${message}` : fallbackMessage;
 }

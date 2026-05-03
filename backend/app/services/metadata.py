@@ -108,9 +108,9 @@ class MetadataService:
                 return True, "", metadata_list
 
         except asyncio.TimeoutError:
-            return False, "获取元数据超时，请检查数据库连接状态", None
+            return False, "Metadata retrieval timed out, please check database connection status", None
         except Exception as e:
-            return False, f"获取元数据失败：{str(e)}", None
+            return False, f"Failed to retrieve metadata: {str(e)}", None
         finally:
             if engine:
                 await engine.dispose()
@@ -183,7 +183,7 @@ class MetadataService:
             conn = result.scalar_one_or_none()
 
             if not conn:
-                return False, f"连接 '{name}' 不存在", None
+                return False, f"Connection '{name}' does not exist", None
 
             metadata_list = None
             should_fetch = force_refresh or not conn.metadata_json

@@ -106,7 +106,7 @@ class TestDeleteConnection:
         with patch("app.services.connection.get_async_session_maker", return_value=lambda: _enter_async_session(async_session)):
             success, error_msg = await ConnectionService.delete_connection("nonexistent")
             assert success is False
-            assert "不存在" in error_msg
+            assert "does not exist" in error_msg
 
 
 class TestGetConnection:

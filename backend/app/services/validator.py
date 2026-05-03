@@ -31,12 +31,12 @@ class ValidatorService:
         """
         # Guard against empty/whitespace input
         if not sql or not sql.strip():
-            raise ValidationError("SQL 查询不能为空")
+            raise ValidationError("SQL query cannot be empty")
 
         # Check for multi-statement injection (detect semicolons)
         stripped = sql.strip()
         if ";" in stripped[:-1]:  # Allow trailing semicolon
-            raise ValidationError("仅支持单条 SQL 查询")
+            raise ValidationError("Only single SQL queries are supported")
 
         # Remove trailing semicolon if present
         if stripped.endswith(";"):
@@ -54,12 +54,12 @@ class ValidatorService:
 
             # Clean up error message
             clean_desc = desc.replace("Expected ", "").replace(" was expected", "")
-            message = f"语法错误 (行 {line}, 列 {col}): {clean_desc}"
+            message = f"Syntax error (line {line}, column {col}): {clean_desc}"
             raise ValidationError(message)
 
         # Check statement type - only SELECT and UNION allowed
         if not isinstance(ast, (exp.Select, exp.Union)):
-            raise ValidationError("仅支持 SELECT 查询")
+            raise ValidationError("Only SELECT queries are supported")
 
         # Check for outer LIMIT and inject if missing
         limit = ast.args.get("limit")

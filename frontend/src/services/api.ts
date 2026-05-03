@@ -3,17 +3,18 @@ import type {
   DatabaseSummary,
   DatabaseDetail,
   QueryResult,
-  NLQueryResponse,
   QueryRequest,
-  NaturalQueryRequest,
   CreateConnectionRequest,
 } from '../types';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout
 });
 
 export const listDbs = async (): Promise<DatabaseSummary[]> => {
@@ -37,11 +38,6 @@ export const deleteDb = async (name: string): Promise<void> => {
 
 export const executeQuery = async (name: string, data: QueryRequest): Promise<QueryResult> => {
   const response = await api.post<QueryResult>(`/databases/${encodeURIComponent(name)}/query`, data);
-  return response.data;
-};
-
-export const naturalQuery = async (name: string, data: NaturalQueryRequest): Promise<NLQueryResponse> => {
-  const response = await api.post<NLQueryResponse>(`/databases/${encodeURIComponent(name)}/query/natural`, data);
   return response.data;
 };
 

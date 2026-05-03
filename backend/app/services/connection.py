@@ -4,6 +4,7 @@ from sqlalchemy import select
 from datetime import datetime, timezone
 from typing import Optional
 import asyncio
+import json
 
 from app.db.sqlite import DatabaseConnection, get_async_session_maker, get_engine
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse
@@ -16,7 +17,7 @@ class ConnectionService:
     def _validate_url(url: str) -> tuple[bool, str]:
         """Validate PostgreSQL connection URL."""
         if not url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
-            return False, "仅支持 PostgreSQL 连接，URL 必须以 postgresql:// 或 postgresql+asyncpg:// 开头"
+            return False, "Only PostgreSQL connections are supported, URL must start with postgresql:// or postgresql+asyncpg://"
         return True, ""
 
     @staticmethod
@@ -36,9 +37,9 @@ class ConnectionService:
                 await asyncio.wait_for(conn.execute(select(1)), timeout=30)
             return True, ""
         except asyncio.TimeoutError:
-            return False, "连接数据库超时，请检查网络或数据库状态"
+            return False, "Database connection timed out, please check network or database status"
         except Exception as e:
-            return False, f"无法连接到数据库服务器：{str(e)}"
+            return False, f"Unable to connect to database server: {str(e)}"
         finally:
             if engine:
                 await engine.dispose()
@@ -69,7 +70,7 @@ class ConnectionService:
             )
             existing = result.scalar_one_or_none()
             if existing:
-                return False, f"连接名称 '{name}' 已存在", None
+                return False, f"Connection name '{name}' already exists", None
 
             # Create new connection
             conn = DatabaseConnection(
@@ -108,7 +109,6 @@ class ConnectionService:
                 table_count = 0
                 view_count = 0
                 if conn.metadata_json:
-                    import json
                     try:
                         metadata = json.loads(conn.metadata_json)
                         for table in metadata:
@@ -155,7 +155,7 @@ class ConnectionService:
             )
             conn = result.scalar_one_or_none()
             if not conn:
-                return False, f"连接 '{name}' 不存在"
+                return False, f"Connection '{name}' does not exist"
 
             await session.delete(conn)
             await session.commit()

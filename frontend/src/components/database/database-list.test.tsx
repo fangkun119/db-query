@@ -37,8 +37,9 @@ describe('DatabaseList', () => {
       />
     )
 
-    expect(screen.getByText('test-db')).toBeInTheDocument()
-    expect(screen.getByText('another-db')).toBeInTheDocument()
+    // Component renders database names in uppercase
+    expect(screen.getByText('TEST-DB')).toBeInTheDocument()
+    expect(screen.getByText('ANOTHER-DB')).toBeInTheDocument()
   })
 
   it('should display database counts', () => {
@@ -53,8 +54,8 @@ describe('DatabaseList', () => {
       />
     )
 
-    expect(screen.getByText('5')).toBeInTheDocument() // tableCount
-    expect(screen.getByText('2')).toBeInTheDocument() // viewCount
+    // Component renders "X tables, Y views" format
+    expect(screen.getByText('5 tables, 2 views')).toBeInTheDocument()
   })
 
   it('should call onClick when database item is clicked', () => {
@@ -69,7 +70,8 @@ describe('DatabaseList', () => {
       />
     )
 
-    const dbItem = screen.getByText('test-db').closest('.database-list-item')
+    // Find by uppercase name
+    const dbItem = screen.getByText('TEST-DB').closest('.database-list-item')
     expect(dbItem).toBeInTheDocument()
 
     if (dbItem) {

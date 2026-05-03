@@ -71,7 +71,7 @@ class TestGetMetadataWithRefresh:
         with patch("app.services.metadata.get_async_session_maker", return_value=lambda: _ctx_mgr(async_session)):
             success, error_msg, response = await MetadataService.get_metadata_with_refresh("nonexistent")
             assert success is False
-            assert "不存在" in error_msg
+            assert "does not exist" in error_msg
             assert response is None
 
     @pytest.mark.asyncio
