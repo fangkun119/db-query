@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Input, Button, Space, Alert, Typography } from 'antd';
-import { BulbOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Input, Alert } from 'antd';
 
 const { TextArea } = Input;
-const { Text } = Typography;
 
 interface NLInputProps {
   onGenerate: (prompt: string) => void;
@@ -18,54 +16,37 @@ export const NLInput: React.FC<NLInputProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
 
-  const handleGenerate = () => {
-    if (prompt.trim()) {
-      onGenerate(prompt);
-      // Don't clear input after generation - user may want to try again
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setPrompt(value);
+    // Immediately notify parent of changes
+    onGenerate(value);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Generate on Ctrl+Enter or Cmd+Enter
+    // Execute on Ctrl+Enter or Cmd+Enter
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
-      handleGenerate();
+      // The prompt is already saved via handleChange
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-        <Space>
-          <BulbOutlined style={{ color: '#1890ff' }} />
-          <Text strong>Natural Language to SQL</Text>
-        </Space>
-        <Text type="secondary" style={{ fontSize: '12px' }}>
-          Ctrl+Enter to generate
-        </Text>
-      </Space>
-
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <TextArea
         value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyPress}
-        placeholder="Ask a question in Chinese... e.g., 显示所有用户的订单数量"
-        autoSize={{ minRows: 4, maxRows: 8 }}
+        placeholder="Ask questions about your data in plain Chinese or English ... e.g., show user orders
+The generated SQL will be validated before executio and click &quot;Execute Query&quot; button or press &quot;Ctrl / CMD + Enter&quot; to run the generated SQL"
         disabled={loading}
-        style={{ fontSize: '14px' }}
+        style={{
+          fontSize: '14px',
+          flex: 1,
+          resize: 'none',
+          minHeight: '200px',
+        }}
       />
-
-      <Button
-        type="primary"
-        onClick={handleGenerate}
-        loading={loading}
-        icon={loading ? <LoadingOutlined /> : undefined}
-        disabled={!prompt.trim()}
-        block
-        style={{ height: '40px', fontWeight: 600 }}
-      >
-        {loading ? 'Generating...' : 'Generate SQL'}
-      </Button>
 
       {error && (
         <Alert
@@ -73,22 +54,9 @@ export const NLInput: React.FC<NLInputProps> = ({
           type="error"
           showIcon
           closable
-          style={{ fontSize: '12px' }}
+          style={{ marginTop: '12px', fontSize: '12px' }}
         />
       )}
-
-      <Alert
-        message={
-          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#595959' }}>
-            <li>Ask questions about your data in plain Chinese</li>
-            <li>The generated SQL will be validated before execution</li>
-            <li>Click "Execute Query" button to run the generated SQL</li>
-          </ul>
-        }
-        type="info"
-        showIcon
-        style={{ fontSize: '12px' }}
-      />
     </div>
   );
 };
