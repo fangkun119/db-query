@@ -5,7 +5,7 @@ import type { editor } from 'monaco-editor';
 interface SqlEditorProps {
   value: string;
   onChange: (value: string) => void;
-  loading?: boolean;
+  onExecute?: () => void;
   placeholder?: string;
   readOnly?: boolean;
 }
@@ -13,16 +13,24 @@ interface SqlEditorProps {
 export const SqlEditor: React.FC<SqlEditorProps> = ({
   value,
   onChange,
-  loading = false,
-  placeholder = 'Enter SQL query here...\ne.g., SELECT * FROM users LIMIT 10',
+  onExecute,
+  placeholder = `Enter SQL query... e.g., "select * from users limit 10".
+
+Click "Execute Query" button or press "Ctrl / CMD + Enter" to run.`,
   readOnly = false,
 }) => {
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     // Set focus on mount
     editor.focus();
+
+    // Add Ctrl/CMD + Enter shortcut for execution
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      if (onExecute) {
+        onExecute();
+      }
+    });
   };
 
-  // Register SQL completion provider
   const handleEditorChange = (newValue: string | undefined) => {
     onChange(newValue || '');
   };

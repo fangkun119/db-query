@@ -293,7 +293,7 @@ export const DatabaseWorkspace: React.FC = () => {
                     Execute Query
                   </Button>
                 </div>
-                <div style={{ padding: '16px' }}>
+                <div style={{ padding: '16px', height: '320px' }}>
                   <Tabs
                     activeKey={activeTab}
                     onChange={(key) => setActiveTab(key as 'manual' | 'natural')}
@@ -302,11 +302,11 @@ export const DatabaseWorkspace: React.FC = () => {
                         key: 'manual',
                         label: 'MANUAL SQL',
                         children: (
-                          <div style={{ height: '280px' }}>
+                          <div style={{ height: '100%' }}>
                             <SqlEditor
                               value={sqlQuery}
                               onChange={setSqlQuery}
-                              placeholder="Enter SQL query... e.g., SELECT * FROM users LIMIT 10"
+                              onExecute={handleExecuteQuery}
                             />
                           </div>
                         ),
