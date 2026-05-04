@@ -278,7 +278,7 @@ export const DatabaseWorkspace: React.FC = () => {
           {selectedDatabase ? (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               {/* Query Editor Section with Tabs */}
-              <div style={{ borderBottom: '1px solid #f0f0f0', backgroundColor: '#fff' }}>
+              <div style={{ flex: '0 0 auto', borderBottom: '1px solid #f0f0f0', backgroundColor: '#fff' }}>
                 <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Title level={5} style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#262626' }}>
                     QUERY EDITOR
@@ -293,7 +293,7 @@ export const DatabaseWorkspace: React.FC = () => {
                     Execute Query
                   </Button>
                 </div>
-                <div style={{ padding: '16px', height: '320px' }}>
+                <div style={{ padding: '12px' }}>
                   <Tabs
                     activeKey={activeTab}
                     onChange={(key) => setActiveTab(key as 'manual' | 'natural')}
@@ -302,7 +302,7 @@ export const DatabaseWorkspace: React.FC = () => {
                         key: 'manual',
                         label: 'MANUAL SQL',
                         children: (
-                          <div style={{ height: '100%' }}>
+                          <div style={{ height: '240px' }}>
                             <SqlEditor
                               value={sqlQuery}
                               onChange={setSqlQuery}
@@ -315,12 +315,14 @@ export const DatabaseWorkspace: React.FC = () => {
                         key: 'natural',
                         label: 'NATURAL LANGUAGE',
                         children: (
-                          <NLInput
-                            onGenerate={handleNaturalQuery}
-                            onExecute={handleExecuteQuery}
-                            loading={executingQuery}
-                            error={nlError}
-                          />
+                          <div style={{ height: '240px' }}>
+                            <NLInput
+                              onGenerate={handleNaturalQuery}
+                              onExecute={handleExecuteQuery}
+                              loading={executingQuery}
+                              error={nlError}
+                            />
+                          </div>
                         ),
                       },
                     ]}
