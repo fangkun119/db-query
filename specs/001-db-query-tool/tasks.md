@@ -119,9 +119,9 @@
 
 **Purpose**: Cross-cutting improvements that span multiple user stories
 
-- [ ] T035 Add INFO-level logging across all backend services in `backend/app/services/` — log connection operations, query executions, metadata refreshes, and errors; ensure connection URLs with credentials are NOT logged per FR-042
-- [ ] T036 [P] Verify all error responses match contracts/api.md — Chinese detail messages, correct HTTP status codes (400, 404, 409, 502, 504), consistent error format { "detail": "..." }
-- [ ] T037 Run quickstart.md validation — start both servers, verify full workflow: add connection → browse schema → execute SQL → generate NL→SQL, check API docs at /docs
+- [X] T035 Add INFO-level logging across all backend services in `backend/app/services/` — log connection operations, query executions, metadata refreshes, and errors; ensure connection URLs with credentials are NOT logged per FR-042
+- [X] T036 [P] Verify all error responses match contracts/api.md — Chinese detail messages, correct HTTP status codes (400, 404, 409, 502, 504), consistent error format { "detail": "..." }
+- [X] T037 Run quickstart.md validation — start both servers, verify full workflow: add connection → browse schema → execute SQL → generate NL→SQL, check API docs at /docs
 
 ---
 

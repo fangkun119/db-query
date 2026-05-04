@@ -1,6 +1,7 @@
 """Natural Language to SQL conversion service using OpenAI SDK."""
 
 import re
+import logging
 from openai import OpenAI, APIError, AuthenticationError, RateLimitError, APITimeoutError, APIConnectionError, InternalServerError
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -8,6 +9,8 @@ from typing import Optional
 from app.config import Settings
 from app.models.metadata import TableMetadata
 from app.services.validator import ValidatorService
+
+logger = logging.getLogger(__name__)
 
 
 class SQLGenerationResult(BaseModel):
@@ -133,6 +136,8 @@ class NLToSQLService:
         Returns:
             Tuple of (success, error_message, result)
         """
+        logger.info(f"Generating SQL for question: {question[:50]}...")
+
         # Build schema context
         schema_ddl = NLToSQLService._build_schema_ddl(tables)
         system_prompt = NLToSQLService._build_system_prompt(schema_ddl)
@@ -175,6 +180,7 @@ class NLToSQLService:
             # Try to extract SQL from text response
             sql = NLToSQLService._extract_sql_from_text(content)
             if not sql:
+                logger.warning("Could not extract SQL from response")
                 return False, "无法从响应中提取 SQL，请重试或使用 SQL 模式", None
 
             result = SQLGenerationResult(sql=sql, explanation=None)
@@ -182,6 +188,8 @@ class NLToSQLService:
         # Validate generated SQL
         is_valid, error_msg = ValidatorService.validate_for_nl_generated(result.sql)
         if not is_valid:
+            logger.warning(f"Generated SQL validation failed: {error_msg}")
             return False, f"生成的 SQL 验证失败: {error_msg}", None
 
+        logger.info(f"Successfully generated SQL: {result.sql[:50]}...")
         return True, "", result

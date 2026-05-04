@@ -5,11 +5,14 @@ from typing import Optional
 import asyncio
 import json
 from datetime import datetime, timezone
+import logging
 
 from app.db.sqlite import DatabaseConnection, get_async_session_maker
 from app.models.metadata import TableMetadata, ColumnMetadata, TableMetadataResponse, ColumnMetadataResponse
 from app.models.database import DatabaseDetailResponse
 from app.services.connection import ConnectionService
+
+logger = logging.getLogger(__name__)
 
 
 class MetadataService:
@@ -28,6 +31,7 @@ class MetadataService:
         Returns:
             tuple: (success, error_message, metadata_list)
         """
+        logger.info("Fetching database metadata")
         async_url = ConnectionService.get_connection_url(url)
         engine = None
         try:
@@ -120,12 +124,15 @@ class MetadataService:
                         comment=table_data.get("comment")
                     ))
 
+                logger.info(f"Successfully fetched metadata for {len(metadata_list)} tables")
                 return True, "", metadata_list
 
         except asyncio.TimeoutError:
-            return False, "Metadata retrieval timed out, please check database connection status", None
+            logger.error("Metadata retrieval timed out")
+            return False, "元数据检索超时，请检查数据库连接状态", None
         except Exception as e:
-            return False, f"Failed to retrieve metadata: {str(e)}", None
+            logger.error(f"Failed to retrieve metadata: {str(e)}")
+            return False, f"检索元数据失败：{str(e)}", None
         finally:
             if engine:
                 await engine.dispose()
@@ -193,6 +200,7 @@ class MetadataService:
         Returns:
             tuple: (success, error_message, response)
         """
+        logger.info(f"Getting metadata for database: {name}, force_refresh={force_refresh}")
         session_maker = get_async_session_maker()
         async with session_maker() as session:
             from sqlalchemy import select

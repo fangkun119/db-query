@@ -5,9 +5,12 @@ from datetime import datetime, timezone
 from typing import Optional
 import asyncio
 import json
+import logging
 
 from app.db.sqlite import DatabaseConnection, get_async_session_maker, get_engine
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionService:
@@ -17,7 +20,7 @@ class ConnectionService:
     def _validate_url(url: str) -> tuple[bool, str]:
         """Validate PostgreSQL connection URL."""
         if not url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
-            return False, "Only PostgreSQL connections are supported, URL must start with postgresql:// or postgresql+asyncpg://"
+            return False, "仅支持 PostgreSQL 连接，URL 必须以 postgresql:// 或 postgresql+asyncpg:// 开头"
         return True, ""
 
     @staticmethod
@@ -37,9 +40,11 @@ class ConnectionService:
                 await asyncio.wait_for(conn.execute(select(1)), timeout=30)
             return True, ""
         except asyncio.TimeoutError:
-            return False, "Database connection timed out, please check network or database status"
+            logger.warning(f"Connection test timed out")
+            return False, "数据库连接超时，请检查网络或数据库状态"
         except Exception as e:
-            return False, f"Unable to connect to database server: {str(e)}"
+            logger.error(f"Connection test failed: {str(e)}")
+            return False, f"无法连接到数据库服务器：{str(e)}"
         finally:
             if engine:
                 await engine.dispose()
@@ -51,6 +56,8 @@ class ConnectionService:
         Returns:
             tuple: (success, error_message, response)
         """
+        logger.info(f"Adding new database connection: {name}")
+
         # Validate URL format
         is_valid, error_msg = ConnectionService._validate_url(request.url)
         if not is_valid:
@@ -93,11 +100,13 @@ class ConnectionService:
                 created_at=conn.created_at,
                 last_refreshed_at=conn.last_refreshed_at
             )
+            logger.info(f"Successfully added database connection: {name}")
             return True, "", response
 
     @staticmethod
     async def list_connections() -> list[DatabaseSummaryResponse]:
         """List all database connections."""
+        logger.info("Listing all database connections")
         session_maker = get_async_session_maker()
         async with session_maker() as session:
             result = await session.execute(select(DatabaseConnection))
@@ -148,6 +157,7 @@ class ConnectionService:
         Returns:
             tuple: (success, error_message)
         """
+        logger.info(f"Deleting database connection: {name}")
         session_maker = get_async_session_maker()
         async with session_maker() as session:
             result = await session.execute(
@@ -159,6 +169,7 @@ class ConnectionService:
 
             await session.delete(conn)
             await session.commit()
+            logger.info(f"Successfully deleted database connection: {name}")
             return True, ""
 
     @staticmethod
