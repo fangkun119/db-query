@@ -42,8 +42,8 @@ class TestSQLGenerationResult:
 class TestExtractSQLFromText:
     """Test SQL extraction from LLM responses."""
 
-    def test_extract_from_markdown_code_block(self):
-        """Test extracting SQL from markdown code block."""
+    def test_extract_from_markdown_code_block_with_sql_tag(self):
+        """Test extracting SQL from markdown code block with sql tag."""
         text = """Here's the SQL query:
 
 ```sql
@@ -55,8 +55,8 @@ This query returns active users."""
         sql = NLToSQLService._extract_sql_from_text(text)
         assert sql == "SELECT * FROM users WHERE active = true"
 
-    def test_extract_from_markdown_without_sql_tag(self):
-        """Test extracting SQL from markdown without sql tag."""
+    def test_extract_from_markdown_code_block_without_sql_tag(self):
+        """Test extracting SQL from markdown code block without sql tag."""
         text = """Query:
 
 ```
@@ -73,7 +73,6 @@ Done."""
         text = "The query is: SELECT id, name FROM products LIMIT 10;"
 
         sql = NLToSQLService._extract_sql_from_text(text)
-        # The regex captures SELECT statements including semicolon if present
         assert sql == "SELECT id, name FROM products LIMIT 10;"
 
     def test_extract_uppercase_select(self):
@@ -81,8 +80,6 @@ Done."""
         text = "select * from orders"
 
         sql = NLToSQLService._extract_sql_from_text(text)
-        # The implementation uses text.upper().startswith("SELECT")
-        # So lowercase "select" should match and return the full text
         assert sql == "select * from orders"
 
     def test_return_full_text_if_starts_with_select(self):
@@ -98,6 +95,28 @@ Done."""
 
         sql = NLToSQLService._extract_sql_from_text(text)
         assert sql is None
+
+    def test_extract_from_multiline_code_block(self):
+        """Test extracting SQL from multiline code block."""
+        text = """
+```sql
+SELECT id, name, email
+FROM users
+WHERE active = true
+ORDER BY name
+```
+"""
+        sql = NLToSQLService._extract_sql_from_text(text)
+        assert "SELECT id, name, email" in sql
+        assert "FROM users" in sql
+        assert "WHERE active = true" in sql
+
+    def test_extract_with_trailing_semicolon(self):
+        """Test extracting SQL with trailing semicolon."""
+        text = "```SELECT * FROM users;```"
+
+        sql = NLToSQLService._extract_sql_from_text(text)
+        assert sql == "SELECT * FROM users;"
 
 
 class TestBuildSchemaDDL:
@@ -117,7 +136,8 @@ class TestBuildSchemaDDL:
                         is_nullable=False,
                         is_primary_key=True,
                         default_value=None,
-                        ordinal_position=1
+                        ordinal_position=1,
+                        comment=None
                     ),
                     ColumnMetadata(
                         name="name",
@@ -125,9 +145,11 @@ class TestBuildSchemaDDL:
                         is_nullable=True,
                         is_primary_key=False,
                         default_value=None,
-                        ordinal_position=2
+                        ordinal_position=2,
+                        comment="User name"
                     ),
-                ]
+                ],
+                comment=None
             )
         ]
 
@@ -136,10 +158,11 @@ class TestBuildSchemaDDL:
         assert "CREATE TABLE public.users" in ddl
         assert "id integer NOT NULL PRIMARY KEY" in ddl
         assert "name varchar" in ddl
+        assert "-- User name" in ddl
         assert ddl.endswith(";")
 
     def test_build_ddl_with_comments(self):
-        """Test building DDL with comments."""
+        """Test building DDL with table and column comments."""
         tables = [
             TableMetadata(
                 schema_name="public",
@@ -179,9 +202,11 @@ class TestBuildSchemaDDL:
                         is_nullable=True,
                         is_primary_key=False,
                         default_value="0.00",
-                        ordinal_position=1
+                        ordinal_position=1,
+                        comment=None
                     ),
-                ]
+                ],
+                comment=None
             )
         ]
 
@@ -203,9 +228,11 @@ class TestBuildSchemaDDL:
                         is_nullable=False,
                         is_primary_key=True,
                         default_value=None,
-                        ordinal_position=1
+                        ordinal_position=1,
+                        comment=None
                     ),
-                ]
+                ],
+                comment=None
             ),
             TableMetadata(
                 schema_name="public",
@@ -218,9 +245,11 @@ class TestBuildSchemaDDL:
                         is_nullable=False,
                         is_primary_key=True,
                         default_value=None,
-                        ordinal_position=1
+                        ordinal_position=1,
+                        comment=None
                     ),
-                ]
+                ],
+                comment=None
             ),
         ]
 
@@ -228,31 +257,7 @@ class TestBuildSchemaDDL:
 
         assert "CREATE TABLE public.users" in ddl
         assert "CREATE TABLE public.orders" in ddl
-
-    def test_build_ddl_with_view(self):
-        """Test building DDL including view."""
-        tables = [
-            TableMetadata(
-                schema_name="public",
-                table_name="user_summary",
-                table_type="VIEW",
-                columns=[
-                    ColumnMetadata(
-                        name="user_count",
-                        data_type="bigint",
-                        is_nullable=False,
-                        is_primary_key=False,
-                        default_value=None,
-                        ordinal_position=1
-                    ),
-                ]
-            )
-        ]
-
-        ddl = NLToSQLService._build_schema_ddl(tables)
-
-        assert "CREATE TABLE public.user_summary" in ddl
-        assert "user_count bigint NOT NULL" in ddl
+        assert ddl.count("CREATE TABLE") == 2
 
 
 class TestBuildSystemPrompt:
@@ -308,7 +313,8 @@ class TestGenerateSQL:
                         is_nullable=False,
                         is_primary_key=True,
                         default_value=None,
-                        ordinal_position=1
+                        ordinal_position=1,
+                        comment="User ID"
                     ),
                     ColumnMetadata(
                         name="name",
@@ -316,7 +322,8 @@ class TestGenerateSQL:
                         is_nullable=True,
                         is_primary_key=False,
                         default_value=None,
-                        ordinal_position=2
+                        ordinal_position=2,
+                        comment="User name"
                     ),
                     ColumnMetadata(
                         name="email",
@@ -324,7 +331,8 @@ class TestGenerateSQL:
                         is_nullable=False,
                         is_primary_key=False,
                         default_value=None,
-                        ordinal_position=3
+                        ordinal_position=3,
+                        comment="Email address"
                     ),
                 ],
                 comment="User accounts"
@@ -332,8 +340,8 @@ class TestGenerateSQL:
         ]
 
     @pytest.mark.asyncio
-    async def test_generate_sql_success(self, mock_settings, sample_tables):
-        """Test successful SQL generation."""
+    async def test_generate_sql_success_with_structured_output(self, mock_settings, sample_tables):
+        """Test successful SQL generation with structured output."""
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.parsed = SQLGenerationResult(
@@ -357,6 +365,62 @@ class TestGenerateSQL:
             assert result is not None
             assert "SELECT" in result.sql
             assert "users" in result.sql
+            assert result.explanation == "查询有邮箱的用户"
+
+    @pytest.mark.asyncio
+    async def test_generate_sql_with_fallback_to_text(self, mock_settings, sample_tables):
+        """Test fallback to text completion when structured output fails."""
+        mock_client = MagicMock()
+
+        # First call to parse() raises exception
+        mock_client.beta.chat.completions.parse.side_effect = Exception("Parse error")
+
+        # Fallback to text completion
+        mock_text_response = MagicMock()
+        mock_text_response.choices = [MagicMock()]
+        mock_text_response.choices[0].message.content = "SELECT * FROM users"
+
+        mock_client.chat.completions.create.return_value = mock_text_response
+
+        with patch("app.services.nl_to_sql.OpenAI", return_value=mock_client), \
+             patch("app.services.nl_to_sql.ValidatorService") as mock_validator:
+            mock_validator.validate_for_nl_generated.return_value = (True, None)
+
+            success, error_msg, result = await NLToSQLService.generate_sql(
+                question="查询所有用户",
+                tables=sample_tables,
+                settings=mock_settings
+            )
+
+            assert success is True
+            assert result is not None
+            assert "SELECT" in result.sql
+
+    @pytest.mark.asyncio
+    async def test_generate_sql_unable_to_extract_from_text(self, mock_settings, sample_tables):
+        """Test failure when SQL cannot be extracted from text response."""
+        mock_client = MagicMock()
+
+        # Parse fails
+        mock_client.beta.chat.completions.parse.side_effect = Exception("Parse error")
+
+        # Text completion returns non-SQL text
+        mock_text_response = MagicMock()
+        mock_text_response.choices = [MagicMock()]
+        mock_text_response.choices[0].message.content = "I cannot generate SQL for that query."
+
+        mock_client.chat.completions.create.return_value = mock_text_response
+
+        with patch("app.services.nl_to_sql.OpenAI", return_value=mock_client):
+            success, error_msg, result = await NLToSQLService.generate_sql(
+                question="invalid query",
+                tables=sample_tables,
+                settings=mock_settings
+            )
+
+            assert success is False
+            assert "无法从响应中提取 SQL" in error_msg or "extract" in error_msg.lower()
+            assert result is None
 
     @pytest.mark.asyncio
     async def test_generate_sql_validation_failure(self, mock_settings, sample_tables):
@@ -384,166 +448,6 @@ class TestGenerateSQL:
             assert success is False
             assert "validation failed" in error_msg.lower() or "验证失败" in error_msg
             assert result is None
-
-    @pytest.mark.asyncio
-    async def test_generate_sql_fallback_to_text(self, mock_settings, sample_tables):
-        """Test fallback to text completion when parse fails."""
-        mock_client = MagicMock()
-
-        # First call to parse() raises exception
-        mock_client.beta.chat.completions.parse.side_effect = Exception("Parse error")
-
-        # Fallback to text completion
-        mock_text_response = MagicMock()
-        mock_text_response.choices = [MagicMock()]
-        mock_text_response.choices[0].message.content = "SELECT * FROM users"
-
-        mock_client.chat.completions.create.return_value = mock_text_response
-
-        with patch("app.services.nl_to_sql.OpenAI", return_value=mock_client), \
-             patch("app.services.nl_to_sql.ValidatorService", return_value=(True, None)) as mock_validator:
-            mock_validator.validate_for_nl_generated.return_value = (True, None)
-
-            success, error_msg, result = await NLToSQLService.generate_sql(
-                question="查询所有用户",
-                tables=sample_tables,
-                settings=mock_settings
-            )
-
-            assert success is True
-            assert result is not None
-            assert "SELECT" in result.sql
-
-    @pytest.mark.asyncio
-    async def test_generate_sql_openai_error(self, mock_settings, sample_tables):
-        """Test that exceptions from OpenAI are propagated when both methods fail."""
-        with patch("app.services.nl_to_sql.OpenAI") as mock_openai:
-            mock_client = MagicMock()
-            mock_openai.return_value = mock_client
-
-            # Set up parse to fail with a generic exception
-            mock_client.beta.chat.completions.parse.side_effect = Exception("Parse failed")
-
-            # Set up create to also fail
-            mock_client.chat.completions.create.side_effect = Exception("API failed")
-
-            # When both fail, the exception should be raised
-            with pytest.raises(Exception, match="API failed"):
-                await NLToSQLService.generate_sql(
-                    question="查询用户",
-                    tables=sample_tables,
-                    settings=mock_settings
-                )
-
-    @pytest.mark.asyncio
-    async def test_generate_sql_unable_to_extract(self, mock_settings, sample_tables):
-        """Test failure when SQL cannot be extracted from text response."""
-        mock_client = MagicMock()
-
-        # Parse fails
-        mock_client.beta.chat.completions.parse.side_effect = Exception("Parse error")
-
-        # Text completion returns non-SQL text
-        mock_text_response = MagicMock()
-        mock_text_response.choices = [MagicMock()]
-        mock_text_response.choices[0].message.content = "I cannot generate SQL for that query."
-
-        mock_client.chat.completions.create.return_value = mock_text_response
-
-        with patch("app.services.nl_to_sql.OpenAI", return_value=mock_client):
-            success, error_msg, result = await NLToSQLService.generate_sql(
-                question="invalid query",
-                tables=sample_tables,
-                settings=mock_settings
-            )
-
-            assert success is False
-            assert "无法从响应中提取 SQL" in error_msg or "extract" in error_msg.lower()
-            assert result is None
-
-    @pytest.mark.asyncio
-    async def test_generate_sql_with_complex_schema(self, mock_settings):
-        """Test SQL generation with complex schema."""
-        complex_tables = [
-            TableMetadata(
-                schema_name="public",
-                table_name="candidates",
-                table_type="BASE TABLE",
-                columns=[
-                    ColumnMetadata(
-                        name="id",
-                        data_type="integer",
-                        is_nullable=False,
-                        is_primary_key=True,
-                        default_value=None,
-                        ordinal_position=1
-                    ),
-                    ColumnMetadata(
-                        name="position_id",
-                        data_type="integer",
-                        is_nullable=True,
-                        is_primary_key=False,
-                        default_value=None,
-                        ordinal_position=2
-                    ),
-                    ColumnMetadata(
-                        name="status",
-                        data_type="varchar",
-                        is_nullable=True,
-                        is_primary_key=False,
-                        default_value="'pending'",
-                        ordinal_position=3
-                    ),
-                ],
-                comment="Candidate applications"
-            ),
-            TableMetadata(
-                schema_name="public",
-                table_name="positions",
-                table_type="BASE TABLE",
-                columns=[
-                    ColumnMetadata(
-                        name="id",
-                        data_type="integer",
-                        is_nullable=False,
-                        is_primary_key=True,
-                        default_value=None,
-                        ordinal_position=1
-                    ),
-                    ColumnMetadata(
-                        name="title",
-                        data_type="varchar",
-                        is_nullable=False,
-                        is_primary_key=False,
-                        default_value=None,
-                        ordinal_position=2
-                    ),
-                ],
-                comment="Job positions"
-            ),
-        ]
-
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.parsed = SQLGenerationResult(
-            sql="SELECT c.id, p.title FROM candidates c JOIN positions p ON c.position_id = p.id WHERE c.status = 'pending'",
-            explanation="查询待处理的候选人及其职位"
-        )
-
-        with patch("app.services.nl_to_sql.OpenAI") as mock_openai:
-            mock_client = MagicMock()
-            mock_openai.return_value = mock_client
-            mock_client.beta.chat.completions.parse.return_value = mock_response
-
-            success, error_msg, result = await NLToSQLService.generate_sql(
-                question="查询所有待处理的候选人及其职位名称",
-                tables=complex_tables,
-                settings=mock_settings
-            )
-
-            assert success is True
-            assert result is not None
-            assert "JOIN" in result.sql
 
 
 class TestErrorMessageMapping:

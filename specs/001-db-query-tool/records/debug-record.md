@@ -316,3 +316,59 @@ useEffect(() => {
 | 翻页可见性 | 窗口小时被遮挡 | 始终固定在底部 |
 
 
+## Phase 5
+
+### Bug 5.001 Pydantic 模型属性访问错误 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | `databases.py` 中 `t["schema_name"]` 报错：TypeError: 'TableMetadataResponse' object is not subscriptable | 1. 自然查询端点启动失败；2. 错误堆栈指向 `natural_query` 函数；3. `db_detail.tables` 返回 Pydantic 模型列表而非字典列表 |
+| 原因 | `get_database` 端点返回 `DatabaseDetailResponse` 对象，其 `tables` 字段是 `TableMetadataResponse` 对象列表，不是字典 | SQLite 存储的是 JSON dict，但 `get_database` 端点使用 Pydantic 序列化为响应对象，返回的是模型对象而非原始字典 |
+| 修复 | 将 `t["schema_name"]` 改为 `t.schema_name`，使用 `ColumnMetadata` 构造函数替代字典语法 | 涉及 `databases.py` 第 95-115 行：dict 访问改为对象属性访问 |
+
+### Bug 5.002 智谱AI 不支持结构化输出 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 智谱AI API 调用失败：400 Bad Request，错误信息 "glm-4.6 does not support structured output" | 1. 配置智谱AI endpoint 后测试自然查询；2. OpenAI SDK 调用失败，400 错误；3. 错误消息明确指出不支持结构化输出 |
+| 原因 | OpenAI SDK 的 `beta.chat.completions.parse()` 结构化输出是 GPT-4o 特性，智谱AI API 不兼容 | 智谱AI 兼容 OpenAI SDK 但不支持结构化输出参数 |
+| 修复步骤 | 1. 添加 `_extract_sql_from_text` 方法解析纯文本 SQL；2. 实现回退机制：先尝试结构化输出，失败时回退到 `chat.completions.create`；3. 支持多种 SQL 格式：markdown 代码块、直接 SELECT 语句 | 新增代码 60+ 行，实现健壮的 SQL 提取逻辑 |
+
+### 技术实现：_extract_sql_from_text 方法
+
+```python
+@staticmethod
+def _extract_sql_from_text(text: str) -> Optional[str]:
+    """Extract SQL from LLM text response.
+    
+    Supports:
+    1. Markdown code blocks: ```sql SELECT ... ```
+    2. Markdown code blocks without sql tag: ``` SELECT ... ```
+    3. Direct SELECT statements
+    """
+    if not text:
+        return None
+    
+    # Try markdown code block first
+    sql_match = re.search(r'```(?:sql)?\s*\n?(.*?)\n?```', text, re.DOTALL | re.IGNORECASE)
+    if sql_match:
+        return sql_match.group(1).strip()
+    
+    # Try direct SELECT statement
+    text_upper = text.strip().upper()
+    if text_upper.startswith('SELECT'):
+        return text.strip()
+    
+    return None
+```
+
+### 验证结果
+
+| 测试项 | 结果 | 说明 |
+|--------|------|------|
+| MANUAL SQL | ✅ | 正常工作 |
+| NATURAL LANGUAGE | ✅ | 正常工作 |
+| 智谱AI API (glm-4.6) | ✅ | 回退机制正常工作 |
+| OpenAI GPT | ✅ | 结构化输出正常工作 |
+
+
