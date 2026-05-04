@@ -3,7 +3,7 @@ from typing import Any
 
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse, DatabaseDetailResponse
 from app.models.query import QueryRequest, QueryResultResponse, NaturalQueryRequest, NLQueryResponse
-from app.models.metadata import TableMetadata
+from app.models.metadata import TableMetadata, ColumnMetadata, TableMetadataResponse, ColumnMetadataResponse
 from app.services.connection import ConnectionService
 from app.services.metadata import MetadataService
 from app.services.query import QueryService
@@ -110,22 +110,22 @@ async def natural_query(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
-    # Convert dict response to TableMetadata objects
+    # Convert TableMetadataResponse to TableMetadata objects
     tables = [
         TableMetadata(
-            schema_name=t["schema_name"],
-            table_name=t["table_name"],
-            table_type=t["table_type"],
+            schema_name=t.schema_name,
+            table_name=t.table_name,
+            table_type=t.table_type,
             columns=[
-                {
-                    "name": c["name"],
-                    "data_type": c["data_type"],
-                    "is_nullable": c["is_nullable"],
-                    "default_value": c.get("default_value"),
-                    "ordinal_position": 0,
-                    "is_primary_key": c.get("is_primary_key", False)
-                }
-                for c in t["columns"]
+                ColumnMetadata(
+                    name=c.name,
+                    data_type=c.data_type,
+                    is_nullable=c.is_nullable,
+                    default_value=c.default_value,
+                    ordinal_position=0,
+                    is_primary_key=c.is_primary_key
+                )
+                for c in t.columns
             ]
         )
         for t in db_detail.tables

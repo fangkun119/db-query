@@ -1,5 +1,6 @@
 """Natural Language to SQL conversion service using OpenAI SDK."""
 
+import re
 from openai import OpenAI, APIError, AuthenticationError, RateLimitError, APITimeoutError, APIConnectionError, InternalServerError
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -28,6 +29,35 @@ class NLToSQLService:
         InternalServerError: "OpenAI 服务暂时不可用",
         APIError: "OpenAI API 调用失败",
     }
+
+    @staticmethod
+    def _extract_sql_from_text(text: str) -> Optional[str]:
+        """Extract SQL from plain text response.
+
+        Args:
+            text: Response text from LLM
+
+        Returns:
+            Extracted SQL or None
+        """
+        # Try to find SQL in markdown code blocks
+        sql_pattern = r"```(?:sql)?\s*\n?(.*?)```"
+        matches = re.findall(sql_pattern, text, re.DOTALL | re.IGNORECASE)
+        if matches:
+            return matches[0].strip()
+
+        # Try to find SELECT statements
+        select_pattern = r"(SELECT\s+.*?;?)(?:\n|$)"
+        matches = re.findall(select_pattern, text, re.IGNORECASE | re.DOTALL)
+        if matches:
+            return matches[0].strip()
+
+        # Return full text if it looks like SQL
+        text = text.strip()
+        if text.upper().startswith("SELECT"):
+            return text
+
+        return None
 
     @staticmethod
     def _build_schema_ddl(tables: list[TableMetadata]) -> str:
@@ -112,6 +142,7 @@ class NLToSQLService:
         )
 
         try:
+            # Try structured output first (works with OpenAI)
             response = client.beta.chat.completions.parse(
                 model=settings.openai_model,
                 temperature=0,
@@ -124,16 +155,29 @@ class NLToSQLService:
 
             result = response.choices[0].message.parsed
 
-            # Validate generated SQL
-            is_valid, error_msg = ValidatorService.validate_for_nl_generated(result.sql)
-            if not is_valid:
-                return False, f"生成的 SQL 验证失败: {error_msg}", None
+        except Exception as parse_error:
+            # Fallback to text completion for non-OpenAI providers (e.g., 智谱AI)
+            response = client.chat.completions.create(
+                model=settings.openai_model,
+                temperature=0,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": question}
+                ]
+            )
 
-            return True, "", result
+            content = response.choices[0].message.content.strip()
 
-        except Exception as e:
-            # Map exception to user-friendly Chinese message
-            for exc_type, msg in NLToSQLService.ERROR_MESSAGES.items():
-                if isinstance(e, exc_type):
-                    return False, msg, None
-            return False, f"SQL 生成失败: {str(e)}", None
+            # Try to extract SQL from text response
+            sql = NLToSQLService._extract_sql_from_text(content)
+            if not sql:
+                return False, "无法从响应中提取 SQL，请重试或使用 SQL 模式", None
+
+            result = SQLGenerationResult(sql=sql, explanation=None)
+
+        # Validate generated SQL
+        is_valid, error_msg = ValidatorService.validate_for_nl_generated(result.sql)
+        if not is_valid:
+            return False, f"生成的 SQL 验证失败: {error_msg}", None
+
+        return True, "", result
