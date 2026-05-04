@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button, Space, Typography, Input, message, Spin, Empty, Tabs } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import DatabaseList from './database-list';
@@ -46,6 +46,12 @@ export const DatabaseWorkspace: React.FC = () => {
   const [nlError, setNlError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'manual' | 'natural'>('manual');
   const [nlPrompt, setNlPrompt] = useState('');
+
+  // Resizable state
+  const [editorHeight, setEditorHeight] = useState(360);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStartY = useRef(0);
+  const resizeStartHeight = useRef(0);
 
   const loadDatabases = useCallback(async () => {
     setLoadingDatabases(true);
@@ -167,6 +173,48 @@ export const DatabaseWorkspace: React.FC = () => {
     setNlError(null);
   };
 
+  // Resizable handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeStartY.current = e.clientY;
+    resizeStartHeight.current = editorHeight;
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing) return;
+
+    const deltaY = e.clientY - resizeStartY.current;
+    const newHeight = resizeStartHeight.current + deltaY;
+
+    // Constrain height between min and max
+    const minHeight = 200;
+    const maxHeight = window.innerHeight - 200;
+    const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+
+    setEditorHeight(clampedHeight);
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+  };
+
+  // Add/remove global event listeners for resize
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
   const filteredTables = selectedDatabase
     ? selectedDatabase.tables.filter(
         (table) =>
@@ -241,7 +289,7 @@ export const DatabaseWorkspace: React.FC = () => {
                   </Button>
                 </Space>
               </div>
-              <div style={{ height: '60px', padding: '0 12px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', backgroundColor: '#F8F8F8' }}>
+              <div style={{ height: '60px', padding: '0 12px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', backgroundColor: '#F5F5F5' }}>
                 <Input
                   className="schema-search-input"
                   prefix={<SearchOutlined />}
@@ -278,8 +326,9 @@ export const DatabaseWorkspace: React.FC = () => {
           {selectedDatabase ? (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               {/* Query Editor Section with Tabs */}
-              <div style={{ flex: '0 0 auto', borderBottom: '1px solid #f0f0f0', backgroundColor: '#fff' }}>
-                <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ flex: '0 0 auto', borderBottom: '1px solid #f0f0f0', backgroundColor: '#fff', height: `${editorHeight}px`, overflow: 'hidden' }}>
+                {/* Row 1: QUERY EDITOR Header */}
+                <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F5F5F5' }}>
                   <Title level={5} style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#262626' }}>
                     QUERY EDITOR
                   </Title>
@@ -293,46 +342,69 @@ export const DatabaseWorkspace: React.FC = () => {
                     Execute Query
                   </Button>
                 </div>
-                <div style={{ padding: '12px' }}>
+
+                {/* Row 2: Tabs - 60px height, aligned with left column */}
+                <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', backgroundColor: '#F5F5F5' }}>
                   <Tabs
                     activeKey={activeTab}
                     onChange={(key) => setActiveTab(key as 'manual' | 'natural')}
+                    tabBarStyle={{ fontWeight: 600 }}
                     items={[
-                      {
-                        key: 'manual',
-                        label: 'MANUAL SQL',
-                        children: (
-                          <div style={{ height: '240px' }}>
-                            <SqlEditor
-                              value={sqlQuery}
-                              onChange={setSqlQuery}
-                              onExecute={handleExecuteQuery}
-                            />
-                          </div>
-                        ),
-                      },
-                      {
-                        key: 'natural',
-                        label: 'NATURAL LANGUAGE',
-                        children: (
-                          <div style={{ height: '240px' }}>
-                            <NLInput
-                              onGenerate={handleNaturalQuery}
-                              onExecute={handleExecuteQuery}
-                              loading={executingQuery}
-                              error={nlError}
-                            />
-                          </div>
-                        ),
-                      },
+                      { key: 'manual', label: 'MANUAL SQL', children: null },
+                      { key: 'natural', label: 'NATURAL LANGUAGE', children: null },
                     ]}
                   />
                 </div>
+
+                {/* Row 3: Editor Content - dynamic height */}
+                <div style={{ height: `calc(${editorHeight}px - 120px)`, overflow: 'hidden' }}>
+                  {activeTab === 'manual' ? (
+                    <div style={{ height: '100%', overflow: 'hidden' }}>
+                      <SqlEditor
+                        value={sqlQuery}
+                        onChange={setSqlQuery}
+                        onExecute={handleExecuteQuery}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ height: '100%', overflow: 'hidden' }}>
+                      <NLInput
+                        onGenerate={handleNaturalQuery}
+                        onExecute={handleExecuteQuery}
+                        loading={executingQuery}
+                        error={nlError}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Resizable Divider */}
+              <div
+                onMouseDown={handleMouseDown}
+                style={{
+                  height: '4px',
+                  backgroundColor: '#f0f0f0',
+                  cursor: 'row-resize',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  borderTop: '1px solid #e8e8e8',
+                  borderBottom: '1px solid #e8e8e8',
+                  transition: 'background-color 0.2s',
+                  position: 'relative',
+                  zIndex: 10,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9d9d9'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0f0f0'; }}
+              >
+                <div style={{ width: '40px', height: '2px', backgroundColor: '#b0b0b0', borderRadius: '1px' }} />
               </div>
 
               {/* Results Section */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#fff' }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#fff', minHeight: 0 }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', flexShrink: 0, backgroundColor: '#F5F5F5' }}>
                   <Title level={5} style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
                     RESULTS
                   </Title>

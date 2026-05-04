@@ -14,7 +14,8 @@ export const SqlEditor: React.FC<SqlEditorProps> = ({
   value,
   onChange,
   onExecute,
-  placeholder = `Enter SQL query... e.g., "select * from users limit 10".
+  placeholder = `
+Enter SQL query... e.g., "select * from users limit 10".
 
 Click "Execute Query" button or press "Ctrl / CMD + Enter" to run.`,
   readOnly = false,
@@ -37,7 +38,17 @@ Click "Execute Query" button or press "Ctrl / CMD + Enter" to run.`,
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ flex: 1, minHeight: '200px', border: '1px solid #d9d9d9', borderRadius: '6px' }}>
+      <div
+        className="sql-editor-container"
+        style={{
+          flex: 1,
+          minHeight: '200px',
+          border: '1px solid #d9d9d9',
+          borderRadius: '6px',
+          overflow: 'hidden',
+          position: 'relative'
+        }}
+      >
         <Editor
           height="100%"
           defaultLanguage="pgsql"
@@ -60,6 +71,17 @@ Click "Execute Query" button or press "Ctrl / CMD + Enter" to run.`,
             },
           }}
         />
+        <style>{`
+          .sql-editor-container > div {
+            border-radius: 6px !important;
+          }
+          .sql-editor-container .monaco-editor {
+            border-radius: 6px !important;
+          }
+          .sql-editor-container .monaco-editor .overflow-guard {
+            border-radius: 6px !important;
+          }
+        `}</style>
       </div>
     </div>
   );

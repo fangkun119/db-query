@@ -50,14 +50,14 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedN
               gap: '12px',
               borderRadius: '8px',
               transition: 'background-color 0.2s',
-              backgroundColor: isSelected ? '#E8F4FD' : '#fff',
+              backgroundColor: isSelected ? '#E8F4FD' : '#F5F5F5',
               boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
             }}
             onMouseEnter={(e) => {
-              if (!isSelected) e.currentTarget.style.backgroundColor = '#fafafa';
+              if (!isSelected) e.currentTarget.style.backgroundColor = '#EBEBEB';
             }}
             onMouseLeave={(e) => {
-              if (!isSelected) e.currentTarget.style.backgroundColor = '#fff';
+              if (!isSelected) e.currentTarget.style.backgroundColor = '#F5F5F5';
             }}
             className="database-list-item"
           >

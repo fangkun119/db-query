@@ -39,7 +39,8 @@ export const NLInput: React.FC<NLInputProps> = ({
         value={prompt}
         onChange={handleChange}
         onKeyDown={handleKeyPress}
-        placeholder="Ask questions about your data in plain Chinese or English ... e.g., &quot;show user orders&quot;.
+        placeholder="
+Ask questions about your data in plain Chinese or English ... e.g., &quot;show user orders&quot;.
 
 The generated SQL will be validated before execution.
 Click &quot;Execute Query&quot; button or press &quot;Ctrl / CMD + Enter&quot; to run."
