@@ -10,7 +10,7 @@
 ### Session 2026-04-27
 
 - Q: Which LLM provider should the NL→SQL feature use? → A: OpenAI API (GPT-4o)
-- Q: What is the target UI language? → A: 简体中文 (Simplified Chinese) — all user-facing text in Chinese
+- Q: What is the target UI language? → A: English — all user-facing text in English
 - Q: How should database connection credentials be protected at rest? → A: Plain text in local SQLite (demo phase, document as known limitation)
 - Q: How should stale/unavailable connections be handled? → A: Test-on-use with error message + reconnect prompt
 - Q: Should users be able to export query results? → A: No export for demo phase (scoped out, can be added post-demo)
@@ -187,7 +187,7 @@ As a data analyst, I want to describe my data question in plain language, so tha
 - **Performance**: Queries are expected to return within seconds; optimization for complex analytical queries is out of scope
 - **Export**: Query result export (CSV, JSON, etc.) is explicitly out of scope for the demo phase; may be added in future releases
 - **Limit Threshold**: Default of 1000 rows is appropriate for demo and exploration; this can be configured
-- **UI Language**: All user-facing text (labels, error messages, help text) MUST be in Simplified Chinese; technical identifiers (table/column names) remain as-is from the database
+- **UI Language**: All user-facing text (labels, error messages, help text) MUST be in English; technical identifiers (table/column names) remain as-is from the database
 - **Browser Compatibility**: Modern web browsers with JavaScript enabled
 - **Database Permissions**: Users have SELECT permissions on the databases they connect to
 - **Network**: Users have stable network connectivity to both the application and their databases
