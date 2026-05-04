@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Button, Space, Typography, Input, message, Spin, Empty, Tabs } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { Button, Space, Typography, Input, message, Spin, Empty, Tabs, Popover } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import DatabaseList from './database-list';
 import DatabaseForm from './database-form';
 import SchemaTree from '../schema/schema-tree';
@@ -404,14 +404,51 @@ export const DatabaseWorkspace: React.FC = () => {
 
               {/* Results Section */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#fff', minHeight: 0 }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', flexShrink: 0, backgroundColor: '#F5F5F5' }}>
-                  <Title level={5} style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
-                    RESULTS
-                  </Title>
-                  {queryResult && (
-                    <Text style={{ fontSize: '12px', color: '#8c8c8c', marginLeft: '12px' }}>
-                      - {queryResult.totalCount} ROWS - {queryResult.executionTimeMs}MS
-                    </Text>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, backgroundColor: '#F5F5F5' }}>
+                  <Space>
+                    <Title level={5} style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                      RESULTS
+                    </Title>
+                    {queryResult && (
+                      <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                        - {queryResult.totalCount} ROWS - {queryResult.executionTimeMs}MS
+                      </Text>
+                    )}
+                  </Space>
+                  {sqlQuery && queryResult && (
+                    <Popover
+                      content={
+                        <div style={{ maxWidth: 600 }}>
+                          <pre style={{
+                            margin: 0,
+                            whiteSpace: 'pre-wrap',
+                            fontSize: '12px',
+                            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace',
+                            backgroundColor: '#f5f5f5',
+                            padding: '8px',
+                            borderRadius: '4px'
+                          }}>
+                            {sqlQuery}
+                          </pre>
+                        </div>
+                      }
+                      trigger="hover"
+                      placement="bottomRight"
+                      overlayStyle={{ maxWidth: 600 }}
+                    >
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        backgroundColor: '#B8860B',
+                        color: '#ffffff',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontFamily: 'sans-serif'
+                      }}>
+                        SQL
+                      </span>
+                    </Popover>
                   )}
                 </div>
                 <div style={{ padding: '16px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
