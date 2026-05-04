@@ -1122,3 +1122,126 @@ Phase 4.11 结果表格滚动优化完成：
 
 **UI 体验达到生产级标准。**
 
+
+## Phase 5 完成工作总结
+
+### Phase 5 功能概览：User Story 3 - 自然语言到 SQL 生成
+
+| 维度 | 内容 |
+|------|------|
+| **目标** | 用户可以使用中文自然语言提问，系统自动生成 SQL 查询 |
+| **优先级** | P3 - 高级功能 |
+| **任务数** | 5 个 (1个前置 + 4个实现) |
+
+### (1) 后端任务 (3个)
+
+| 任务 | 文件 | 功能 |
+|------|------|------|
+| T030.5 | config.py | 用户级环境文件配置：env_file 改为 `~/db_query.env` |
+| T031 | services/nl_to_sql.py | NL to SQL 服务：DDL 上下文构建、OpenAI API 调用、SQL 验证 |
+| T032 | api/v1/databases.py | 自然查询端点：POST /databases/{name}/query/natural |
+
+> **[后续变更]** 2026-05-04: 配置文件路径已从 `~/db_query.env` 迁移到 `~/.db_query/env.properties`（见 commit 9f2a55a）
+
+### (2) 前端任务 (2个)
+
+| 任务 | 文件 | 功能 |
+|------|------|------|
+| T033 | components/editor/nl-input.tsx | NL 输入组件：中文问题输入框、生成按钮、错误显示 |
+| T034 | components/database/database-workspace.tsx | 工作空间集成：NL 输入区域、状态管理、API 调用 |
+
+### (3) 技术实现要点
+
+#### NL to SQL 服务 (nl_to_sql.py)
+
+| 特性 | 实现方式 |
+|------|----------|
+| OpenAI SDK | `client.beta.chat.completions.parse()` 结构化输出 |
+| 响应格式 | `SQLGenerationResult` Pydantic 模型（sql + explanation） |
+| Schema 上下文 | DDL 风格：`CREATE TABLE schema.table (col type, ...)` |
+| 系统提示词 | 中文指令：仅 SELECT、无 LIMIT、PostgreSQL 语法、严格匹配表/列名 |
+| 温度设置 | `temperature=0` 确保输出稳定性 |
+| 验证集成 | `ValidatorService.validate_for_nl_generated()` |
+| 错误映射 | OpenAI 异常 → 中文错误消息 |
+
+#### 自然查询 API (databases.py)
+
+| 特性 | 实现方式 |
+|------|----------|
+| 端点 | `POST /databases/{name}/query/natural` |
+| 请求体 | `{ "prompt": "中文问题" }` |
+| 响应体 | `{ "sql": "SELECT ...", "explanation": "中文说明" }` |
+| 元数据获取 | `MetadataService.get_metadata_with_refresh(force_refresh=False)` |
+| 对象转换 | `dict` → `TableMetadata` 对象列表 |
+
+#### NL 输入组件 (nl-input.tsx)
+
+| 特性 | 实现方式 |
+|------|----------|
+| 输入框 | `Input.TextArea`，自适应高度（2-4行） |
+| 占位符 | "Ask a question in Chinese... e.g., 显示所有用户的订单数量" |
+| 快捷键 | Ctrl+Enter / Cmd+Enter 生成 |
+| 按钮 | "Generate SQL" / "Generating SQL..." 加载状态 |
+| 错误显示 | `Alert` 组件显示错误消息 |
+| Tips | 中文提示：自然语言提问、SQL 验证、可编辑 |
+
+### (4) 配置变更
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `backend/app/config.py` | `env_file = Path.home() / "db_query.env"` | 用户级环境文件，支持 OpenAI API 配置 |
+| `~/db_query.env` | 新增文件 | OPENAI_API_KEY、OPENAI_API_ENDPOINT、OPENAI_MODEL |
+
+### (5) API 扩展
+
+| 端点 | 方法 | 请求体 | 响应体 |
+|------|------|--------|--------|
+| `/databases/{name}/query/natural` | POST | `{ "prompt": "string" }` | `{ "sql": "string", "explanation?": "string" }` |
+
+### (6) 前端类型扩展
+
+| 类型 | 定义 |
+|------|------|
+| `NaturalQueryRequest` | `{ prompt: string }` |
+| `NLQueryResponse` | `{ sql: string, explanation?: string }` |
+
+### (7) Bug 修复
+
+| Bug ID | 类型 | 问题 | 修复 |
+|--------|------|------|------|
+| 5.001 | 后端兼容性 | Pydantic 模型属性访问错误 | 使用对象属性替代字典语法 |
+| 5.002 | 后端兼容性 | 智谱AI 不支持结构化输出 | 添加 `_extract_sql_from_text` 回退机制 |
+
+### Bug 5.001: Pydantic 模型属性访问错误
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | `databases.py` 中 `t["schema_name"]` 报错 | TypeError: 'TableMetadataResponse' object is not subscriptable |
+| 原因 | `get_database` 端点返回 Pydantic 模型对象，非字典 | SQLite 返回 dict，但 `get_database` 序列化为 `DatabaseDetailResponse` 对象 |
+| 修复 | 使用对象属性访问：`t.schema_name`、`c.name` | 使用 `ColumnMetadata` 构造函数替代字典语法 |
+
+### Bug 5.002: 智谱AI 不支持结构化输出
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 智谱AI API 调用失败，不支持 `response_format` | 400 Bad Request: "glm-4.6 does not support structured output" |
+| 原因 | OpenAI SDK 的结构化输出是 GPT-4o 特性，智谱AI 不兼容 | 需要回退到纯文本模式并解析 SQL |
+| 修复 | 添加 `_extract_sql_from_text` 方法 + 回退机制 | 1. 先尝试结构化输出；2. 失败时回退到 `chat.completions.create`；3. 用正则提取 SQL（支持 markdown 代码块和直接 SELECT 语句） |
+
+### (8) 验证结果
+
+| 测试项 | 结果 | 说明 |
+|--------|------|------|
+| MANUAL SQL | ✅ | 正常工作 |
+| NATURAL LANGUAGE | ✅ | 正常工作 |
+| 智谱AI API 兼容性 | ✅ | glm-4.6 正常工作 |
+
+### (9) 可交付结论
+
+Phase 5 自然语言到 SQL 生成功能完成：
+- 后端：NL to SQL 服务 + 自然查询 API
+- 前端：NL 输入组件 + 工作空间集成
+- 配置：用户级环境文件 `~/db_query.env`
+- 兼容性：支持 OpenAI GPT 和智谱AI
+
+**Phase 5 所有功能已验证通过，可交付。**
