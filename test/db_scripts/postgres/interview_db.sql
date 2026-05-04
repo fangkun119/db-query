@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Interview Management Database - Complete Test Database
--- Version: 3.0 Extended Data
+-- Version: 4.0 with Comments
 -- Usage: psql -U postgres -f interview_db.sql
 -- ============================================================================
 
@@ -29,6 +29,7 @@ CREATE TYPE offer_status_enum AS ENUM ('draft', 'sent', 'accepted', 'rejected', 
 -- TABLES
 -- ============================================================================
 
+-- Departments Table
 CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -40,6 +41,16 @@ CREATE TABLE departments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+COMMENT ON TABLE departments IS '部门表：存储公司各部门的基本信息，包括部门名称、代码、预算、位置等';
+COMMENT ON COLUMN departments.id IS '部门唯一标识符';
+COMMENT ON COLUMN departments.name IS '部门名称';
+COMMENT ON COLUMN departments.code IS '部门代码，唯一标识';
+COMMENT ON COLUMN departments.description IS '部门描述';
+COMMENT ON COLUMN departments.head_of_department_id IS '部门负责人ID，关联employees表';
+COMMENT ON COLUMN departments.budget_yearly IS '年度预算';
+COMMENT ON COLUMN departments.location IS '部门所在位置';
+
+-- Employees Table
 CREATE TABLE employees (
     id SERIAL PRIMARY KEY,
     employee_code VARCHAR(50) UNIQUE NOT NULL,
@@ -55,6 +66,21 @@ CREATE TABLE employees (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+COMMENT ON TABLE employees IS '员工表：存储公司员工的基本信息，包括姓名、联系方式、所属部门、职位级别、入职日期等';
+COMMENT ON COLUMN employees.id IS '员工唯一标识符';
+COMMENT ON COLUMN employees.employee_code IS '员工工号，唯一标识';
+COMMENT ON COLUMN employees.first_name IS '名';
+COMMENT ON COLUMN employees.last_name IS '姓';
+COMMENT ON COLUMN employees.email IS '邮箱地址';
+COMMENT ON COLUMN employees.phone IS '电话号码';
+COMMENT ON COLUMN employees.department_id IS '所属部门ID，关联departments表';
+COMMENT ON COLUMN employees.position IS '职位名称';
+COMMENT ON COLUMN employees.level IS '职级（如：Junior, Mid, Senior, Staff）';
+COMMENT ON COLUMN employees.hire_date IS '入职日期';
+COMMENT ON COLUMN employees.status IS '员工状态（如：active, inactive）';
+COMMENT ON COLUMN employees.created_at IS '记录创建时间';
+
+-- Positions Table
 CREATE TABLE positions (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -72,6 +98,23 @@ CREATE TABLE positions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+COMMENT ON TABLE positions IS '职位表：存储公司开放招聘的职位信息，包括职位名称、所属部门、薪资范围、工作经验要求、招聘人数等';
+COMMENT ON COLUMN positions.id IS '职位唯一标识符';
+COMMENT ON COLUMN positions.title IS '职位标题';
+COMMENT ON COLUMN positions.code IS '职位代码，唯一标识';
+COMMENT ON COLUMN positions.department_id IS '所属部门ID，关联departments表';
+COMMENT ON COLUMN positions.description IS '职位描述';
+COMMENT ON COLUMN positions.min_years_experience IS '最低工作年限要求';
+COMMENT ON COLUMN positions.max_years_experience IS '最高工作年限要求';
+COMMENT ON COLUMN positions.min_salary IS '最低薪资';
+COMMENT ON COLUMN positions.max_salary IS '最高薪资';
+COMMENT ON COLUMN positions.headcount IS '招聘人数';
+COMMENT ON COLUMN positions.headcount_filled IS '已录用人数';
+COMMENT ON COLUMN positions.remote_allowed IS '是否允许远程工作';
+COMMENT ON COLUMN positions.status IS '职位状态（如：draft, open, closed, on_hold, paused）';
+COMMENT ON COLUMN positions.created_at IS '记录创建时间';
+
+-- Candidates Table
 CREATE TABLE candidates (
     id SERIAL PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
@@ -84,6 +127,18 @@ CREATE TABLE candidates (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+COMMENT ON TABLE candidates IS '候选人表：存储求职者的基本信息，包括姓名、联系方式、工作经验、期望薪资、申请状态等';
+COMMENT ON COLUMN candidates.id IS '候选人唯一标识符';
+COMMENT ON COLUMN candidates.first_name IS '名';
+COMMENT ON COLUMN candidates.last_name IS '姓';
+COMMENT ON COLUMN candidates.email IS '邮箱地址';
+COMMENT ON COLUMN candidates.phone IS '电话号码';
+COMMENT ON COLUMN candidates.years_of_experience IS '工作年限';
+COMMENT ON COLUMN candidates.expected_salary IS '期望薪资';
+COMMENT ON COLUMN candidates.status IS '候选人状态（如：applied, screening, interviewing, offered, hired等）';
+COMMENT ON COLUMN candidates.created_at IS '记录创建时间';
+
+-- Candidate Position Applications Table
 CREATE TABLE candidate_position_applications (
     id SERIAL PRIMARY KEY,
     candidate_id INTEGER NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
@@ -94,6 +149,15 @@ CREATE TABLE candidate_position_applications (
     UNIQUE(candidate_id, position_id)
 );
 
+COMMENT ON TABLE candidate_position_applications IS '候选人职位申请表：记录候选人对特定职位的申请状态，一个候选人可以申请多个职位';
+COMMENT ON COLUMN candidate_position_applications.id IS '申请记录唯一标识符';
+COMMENT ON COLUMN candidate_position_applications.candidate_id IS '候选人ID，关联candidates表';
+COMMENT ON COLUMN candidate_position_applications.position_id IS '职位ID，关联positions表';
+COMMENT ON COLUMN candidate_position_applications.applied_date IS '申请日期';
+COMMENT ON COLUMN candidate_position_applications.status IS '申请状态（如：applied, screening, interviewing, offered, accepted, rejected, withdrawn）';
+COMMENT ON COLUMN candidate_position_applications.created_at IS '记录创建时间';
+
+-- Interviewers Table
 CREATE TABLE interviewers (
     id SERIAL PRIMARY KEY,
     employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
@@ -103,6 +167,15 @@ CREATE TABLE interviewers (
     is_active BOOLEAN DEFAULT true
 );
 
+COMMENT ON TABLE interviewers IS '面试官表：存储员工作为面试官的信息，包括专业领域、可面试类型、经验年限等';
+COMMENT ON COLUMN interviewers.id IS '面试官唯一标识符';
+COMMENT ON COLUMN interviewers.employee_id IS '员工ID，关联employees表';
+COMMENT ON COLUMN interviewers.expertise_areas IS '专业领域数组（如：Java, Python, System Design, Frontend, Backend等）';
+COMMENT ON COLUMN interviewers.interview_types IS '可面试类型数组（如：hr_screen, technical, coding_challenge, system_design, behavioral等）';
+COMMENT ON COLUMN interviewers.years_of_experience IS '作为面试官的经验年限';
+COMMENT ON COLUMN interviewers.is_active IS '是否活跃面试官';
+
+-- Interview Rounds Table
 CREATE TABLE interview_rounds (
     id SERIAL PRIMARY KEY,
     position_id INTEGER NOT NULL REFERENCES positions(id) ON DELETE CASCADE,
@@ -113,6 +186,15 @@ CREATE TABLE interview_rounds (
     UNIQUE(position_id, round_order)
 );
 
+COMMENT ON TABLE interview_rounds IS '面试轮次表：定义每个职位的面试轮次信息，包括轮次名称、顺序、类型和时长';
+COMMENT ON COLUMN interview_rounds.id IS '面试轮次唯一标识符';
+COMMENT ON COLUMN interview_rounds.position_id IS '职位ID，关联positions表';
+COMMENT ON COLUMN interview_rounds.round_name IS '轮次名称（如：HR Screen, Technical Screen, Coding Challenge等）';
+COMMENT ON COLUMN interview_rounds.round_order IS '轮次顺序';
+COMMENT ON COLUMN interview_rounds.interview_type IS '面试类型（如：hr_screen, technical, coding_challenge, system_design, behavioral等）';
+COMMENT ON COLUMN interview_rounds.duration_minutes IS '面试时长（分钟）';
+
+-- Interview Schedules Table
 CREATE TABLE interview_schedules (
     id SERIAL PRIMARY KEY,
     application_id INTEGER NOT NULL REFERENCES candidate_position_applications(id) ON DELETE CASCADE,
@@ -125,6 +207,18 @@ CREATE TABLE interview_schedules (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+COMMENT ON TABLE interview_schedules IS '面试安排表：记录具体的面试安排信息，包括时间、地点、面试官、状态等';
+COMMENT ON COLUMN interview_schedules.id IS '面试安排唯一标识符';
+COMMENT ON COLUMN interview_schedules.application_id IS '申请ID，关联candidate_position_applications表';
+COMMENT ON COLUMN interview_schedules.round_id IS '轮次ID，关联interview_rounds表';
+COMMENT ON COLUMN interview_schedules.interviewer_id IS '面试官ID，关联interviewers表';
+COMMENT ON COLUMN interview_schedules.scheduled_start_time IS '计划开始时间';
+COMMENT ON COLUMN interview_schedules.scheduled_end_time IS '计划结束时间';
+COMMENT ON COLUMN interview_schedules.location IS '面试地点（如：Remote, Office, Phone, Video Call）';
+COMMENT ON COLUMN interview_schedules.status IS '面试状态（如：scheduled, confirmed, completed, cancelled, no_show）';
+COMMENT ON COLUMN interview_schedules.created_at IS '记录创建时间';
+
+-- Evaluation Criteria Table
 CREATE TABLE evaluation_criteria (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -132,6 +226,13 @@ CREATE TABLE evaluation_criteria (
     max_score INTEGER DEFAULT 5
 );
 
+COMMENT ON TABLE evaluation_criteria IS '评估标准表：定义面试评估的各项标准，包括标准名称、分类和最高分';
+COMMENT ON COLUMN evaluation_criteria.id IS '评估标准唯一标识符';
+COMMENT ON COLUMN evaluation_criteria.name IS '评估标准名称（如：Technical Skills, Problem Solving, Communication等）';
+COMMENT ON COLUMN evaluation_criteria.category IS '评估分类（如：Technical, Behavioral）';
+COMMENT ON COLUMN evaluation_criteria.max_score IS '最高分值';
+
+-- Interview Results Table
 CREATE TABLE interview_results (
     id SERIAL PRIMARY KEY,
     schedule_id INTEGER NOT NULL REFERENCES interview_schedules(id) ON DELETE CASCADE,
@@ -143,6 +244,17 @@ CREATE TABLE interview_results (
     communication_score INTEGER CHECK (communication_score BETWEEN 1 AND 5)
 );
 
+COMMENT ON TABLE interview_results IS '面试结果表：存储每次面试的详细评估结果，包括综合评分、推荐意见、反馈摘要和分项评分';
+COMMENT ON COLUMN interview_results.id IS '面试结果唯一标识符';
+COMMENT ON COLUMN interview_results.schedule_id IS '面试安排ID，关联interview_schedules表';
+COMMENT ON COLUMN interview_results.interviewer_id IS '面试官ID，关联interviewers表';
+COMMENT ON COLUMN interview_results.overall_rating IS '综合评分（1-5分）';
+COMMENT ON COLUMN interview_results.recommendation IS '推荐意见（如：strong_reject, reject, weak_hire, hire, strong_hire）';
+COMMENT ON COLUMN interview_results.feedback_summary IS '反馈摘要文字描述';
+COMMENT ON COLUMN interview_results.technical_score IS '技术能力评分（1-5分）';
+COMMENT ON COLUMN interview_results.communication_score IS '沟通能力评分（1-5分）';
+
+-- Interview Feedback Summary Table
 CREATE TABLE interview_feedback_summary (
     id SERIAL PRIMARY KEY,
     application_id INTEGER NOT NULL REFERENCES candidate_position_applications(id) ON DELETE CASCADE,
@@ -153,6 +265,16 @@ CREATE TABLE interview_feedback_summary (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+COMMENT ON TABLE interview_feedback_summary IS '面试反馈汇总表：汇总每个候选人的所有面试反馈，包括总面试次数、已完成次数、平均评分和最终推荐意见';
+COMMENT ON COLUMN interview_feedback_summary.id IS '反馈汇总唯一标识符';
+COMMENT ON COLUMN interview_feedback_summary.application_id IS '申请ID，关联candidate_position_applications表';
+COMMENT ON COLUMN interview_feedback_summary.total_interviews IS '总面试轮次数';
+COMMENT ON COLUMN interview_feedback_summary.completed_interviews IS '已完成面试轮次数';
+COMMENT ON COLUMN interview_feedback_summary.average_rating IS '平均评分';
+COMMENT ON COLUMN interview_feedback_summary.final_recommendation IS '最终推荐意见';
+COMMENT ON COLUMN interview_feedback_summary.created_at IS '记录创建时间';
+
+-- Offers Table
 CREATE TABLE offers (
     id SERIAL PRIMARY KEY,
     application_id INTEGER NOT NULL REFERENCES candidate_position_applications(id) ON DELETE CASCADE,
@@ -164,6 +286,17 @@ CREATE TABLE offers (
     status offer_status_enum DEFAULT 'draft',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+COMMENT ON TABLE offers IS '录用Offer表：存储发给候选人的录用offer信息，包括薪资、奖金、股票期权、福利等';
+COMMENT ON COLUMN offers.id IS 'Offer唯一标识符';
+COMMENT ON COLUMN offers.application_id IS '申请ID，关联candidate_position_applications表';
+COMMENT ON COLUMN offers.base_salary IS '基本年薪';
+COMMENT ON COLUMN offers.bonus_percentage IS '奖金百分比';
+COMMENT ON COLUMN offers.stock_options IS '股票期权价值';
+COMMENT ON COLUMN offers.benefits IS '福利待遇描述';
+COMMENT ON COLUMN offers.start_date IS '计划入职日期';
+COMMENT ON COLUMN offers.status IS 'Offer状态（如：draft, sent, accepted, rejected, expired, withdrawn）';
+COMMENT ON COLUMN offers.created_at IS '记录创建时间';
 
 -- ============================================================================
 -- VIEWS
@@ -177,6 +310,8 @@ JOIN positions p ON a.position_id = p.id
 LEFT JOIN interview_schedules s ON a.id = s.application_id
 GROUP BY c.id, c.first_name, c.last_name, p.title, a.status;
 
+COMMENT ON VIEW v_candidate_pipeline IS '候选人漏斗视图：显示每个候选人当前状态、申请职位和面试次数';
+
 CREATE VIEW v_upcoming_interviews AS
 SELECT s.id, c.first_name, c.last_name, p.title, e.first_name as interviewer, s.scheduled_start_time
 FROM interview_schedules s
@@ -186,6 +321,8 @@ JOIN positions p ON a.position_id = p.id
 JOIN interviewers i ON s.interviewer_id = i.id
 JOIN employees e ON i.employee_id = e.id
 WHERE s.scheduled_start_time > CURRENT_TIMESTAMP;
+
+COMMENT ON VIEW v_upcoming_interviews IS '即将到来的面试视图：显示未来需要进行的面试安排详情';
 
 -- ============================================================================
 -- SEED DATA
@@ -359,7 +496,7 @@ INSERT INTO employees (employee_code, first_name, last_name, email, department_i
 ('EMP137', 'Maria', 'Martin', 'maria.martin@company.com', 5, 'Marketing Manager', 'Mid', '2021-10-10'),
 ('EMP138', 'Walter', 'Thompson', 'walter.t@company.com', 5, 'Content Strategist', 'Junior', '2023-12-25'),
 ('EMP139', 'Beverly', 'Garcia', 'beverly.g@company.com', 5, 'Senior Marketing Manager', 'Senior', '2020-08-05'),
-('EMP140', 'Harold', 'Martinez', 'harold.m@company.com', 5, 'Marketing Manager', 'Mid', '2022-04-20'),
+('EMP140', 'Harold', 'Martinez', 'harold.martinez@company.com', 5, 'Marketing Manager', 'Mid', '2022-04-20'),
 ('EMP141', 'Teresa', 'Robinson', 'teresa.r@company.com', 5, 'Content Strategist', 'Mid', '2021-07-05'),
 ('EMP142', 'Carl', 'Clark', 'carl.clark@company.com', 5, 'Senior Marketing Manager', 'Senior', '2019-02-10'),
 ('EMP143', 'Sara', 'Rodriguez', 'sara.r@company.com', 5, 'Marketing Manager', 'Junior', '2023-11-15'),
@@ -381,7 +518,7 @@ INSERT INTO employees (employee_code, first_name, last_name, email, department_i
 ('EMP157', 'Kathryn', 'Gonzalez', 'kathryn.g@company.com', 6, 'Sales Manager', 'Mid', '2021-11-30'),
 ('EMP158', 'Dennis', 'Wilson', 'dennis.w@company.com', 6, 'Account Executive', 'Junior', '2023-12-14'),
 ('EMP159', 'Frances', 'Anderson', 'frances.a@company.com', 6, 'Senior Sales Manager', 'Senior', '2020-06-22'),
-('EMP160', 'Jerry', 'Thomas', 'jerry.t@company.com', 6, 'Sales Manager', 'Mid', '2022-09-06');
+('EMP160', 'Jerry', 'Thomas', 'jerry.t@company.com', 6, 'Sales Manager', 'Mid', '2022-09-06'),
 
 -- Positions (50 positions)
 INSERT INTO positions (title, code, department_id, min_salary, max_salary, headcount, remote_allowed, status) VALUES
@@ -730,4 +867,4 @@ BEGIN
     RAISE NOTICE 'Offers: %', (SELECT COUNT(*) FROM offers);
     RAISE NOTICE 'Connection: postgresql://postgres@localhost:5432/interview_db';
     RAISE NOTICE '========================================';
-END $$;
+END $$

@@ -4,6 +4,7 @@ export interface ColumnMeta {
   isNullable: boolean;
   defaultValue?: string;
   isPrimaryKey?: boolean;
+  comment?: string;
 }
 
 export interface TableMeta {
@@ -11,6 +12,7 @@ export interface TableMeta {
   tableName: string;
   tableType: string;
   columns: ColumnMeta[];
+  comment?: string;
 }
 
 export interface DatabaseSummary {

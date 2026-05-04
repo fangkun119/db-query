@@ -67,7 +67,7 @@ class NLToSQLService:
             tables: List of table metadata
 
         Returns:
-            DDL string with CREATE TABLE statements
+            DDL string with CREATE TABLE statements and comments
         """
         ddl_lines = []
         for table in tables:
@@ -80,11 +80,15 @@ class NLToSQLService:
                     col_def += " PRIMARY KEY"
                 if col.default_value:
                     col_def += f" DEFAULT {col.default_value}"
+                if col.comment:
+                    col_def += f" -- {col.comment}"
                 columns_ddl.append(col_def)
 
             table_ddl = f"CREATE TABLE {table.schema_name}.{table.table_name} (\n"
             table_ddl += ",\n".join(columns_ddl)
             table_ddl += "\n);"
+            if table.comment:
+                table_ddl += f" -- {table.comment}"
             ddl_lines.append(table_ddl)
 
         return "\n\n".join(ddl_lines)

@@ -33,7 +33,7 @@ class MetadataService:
         try:
             engine = create_async_engine(async_url, poolclass=NullPool)
             async with engine.connect() as conn:
-                # Query for tables and views
+                # Query for tables and views with comments
                 query = text("""
                     SELECT
                         t.table_schema,
@@ -44,7 +44,9 @@ class MetadataService:
                         c.is_nullable,
                         c.column_default,
                         c.ordinal_position,
-                        COALESCE(kcu.column_name IS NOT NULL, false) as is_primary_key
+                        COALESCE(kcu.column_name IS NOT NULL, false) as is_primary_key,
+                        pgd.description as table_comment,
+                        pgd_col.description as column_comment
                     FROM information_schema.tables t
                     LEFT JOIN information_schema.columns c
                         ON t.table_schema = c.table_schema
@@ -58,6 +60,14 @@ class MetadataService:
                         AND kcu.table_name = t.table_name
                         AND kcu.column_name = c.column_name
                         AND kcu.constraint_name = tc.constraint_name
+                    LEFT JOIN pg_class pgc
+                        ON pgc.relname = t.table_name
+                    LEFT JOIN pg_namespace pgn
+                        ON pgn.oid = pgc.relnamespace AND pgn.nspname = t.table_schema
+                    LEFT JOIN pg_description pgd
+                        ON pgd.objoid = pgc.oid AND pgd.objsubid = 0
+                    LEFT JOIN pg_description pgd_col
+                        ON pgd_col.objoid = pgc.oid AND pgd_col.objsubid = c.ordinal_position
                     WHERE t.table_schema NOT IN ('pg_catalog', 'information_schema')
                     ORDER BY t.table_schema, t.table_name, c.ordinal_position
                 """)
@@ -71,6 +81,7 @@ class MetadataService:
                     schema_name = row[0]
                     table_name = row[1]
                     table_type = row[2]
+                    table_comment = row[9]  # obj_description for table
 
                     key = f"{schema_name}.{table_name}"
                     if key not in tables_dict:
@@ -78,18 +89,21 @@ class MetadataService:
                             "schema_name": schema_name,
                             "table_name": table_name,
                             "table_type": table_type,
+                            "comment": table_comment,
                             "columns": []
                         }
 
                     # Add column if present (views might have no columns in some DBs)
                     if row[3]:  # column_name
+                        column_comment = row[10]  # col_description for column
                         tables_dict[key]["columns"].append({
                             "name": row[3],
                             "data_type": row[4],
                             "is_nullable": row[5] == "YES",
                             "default_value": row[6],
                             "ordinal_position": row[7],
-                            "is_primary_key": row[8] if row[8] is not None else False
+                            "is_primary_key": row[8] if row[8] is not None else False,
+                            "comment": column_comment
                         })
 
                 # Convert to TableMetadata models
@@ -102,7 +116,8 @@ class MetadataService:
                         schema_name=table_data["schema_name"],
                         table_name=table_data["table_name"],
                         table_type=table_data["table_type"],
-                        columns=columns
+                        columns=columns,
+                        comment=table_data.get("comment")
                     ))
 
                 return True, "", metadata_list
@@ -124,6 +139,7 @@ class MetadataService:
                 "schema_name": table.schema_name,
                 "table_name": table.table_name,
                 "table_type": table.table_type,
+                "comment": table.comment,
                 "columns": [
                     {
                         "name": col.name,
@@ -131,7 +147,8 @@ class MetadataService:
                         "is_nullable": col.is_nullable,
                         "default_value": col.default_value,
                         "ordinal_position": col.ordinal_position,
-                        "is_primary_key": col.is_primary_key
+                        "is_primary_key": col.is_primary_key,
+                        "comment": col.comment
                     }
                     for col in table.columns
                 ]
@@ -155,7 +172,8 @@ class MetadataService:
                     is_nullable=col["is_nullable"],
                     default_value=col.get("default_value"),
                     ordinal_position=col["ordinal_position"],
-                    is_primary_key=col.get("is_primary_key", False)
+                    is_primary_key=col.get("is_primary_key", False),
+                    comment=col.get("comment")
                 )
                 for col in table_data["columns"]
             ]
@@ -163,7 +181,8 @@ class MetadataService:
                 schema_name=table_data["schema_name"],
                 table_name=table_data["table_name"],
                 table_type=table_data["table_type"],
-                columns=columns
+                columns=columns,
+                comment=table_data.get("comment")
             ))
         return metadata_list
 
@@ -212,13 +231,15 @@ class MetadataService:
                     "schema_name": table.schema_name,
                     "table_name": table.table_name,
                     "table_type": table.table_type,
+                    "comment": table.comment,
                     "columns": [
                         {
                             "name": col.name,
                             "data_type": col.data_type,
                             "is_nullable": col.is_nullable,
                             "default_value": col.default_value,
-                            "is_primary_key": col.is_primary_key
+                            "is_primary_key": col.is_primary_key,
+                            "comment": col.comment
                         }
                         for col in table.columns
                     ]

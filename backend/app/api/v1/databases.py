@@ -123,10 +123,12 @@ async def natural_query(
                     is_nullable=c.is_nullable,
                     default_value=c.default_value,
                     ordinal_position=0,
-                    is_primary_key=c.is_primary_key
+                    is_primary_key=c.is_primary_key,
+                    comment=c.comment
                 )
                 for c in t.columns
-            ]
+            ],
+            comment=t.comment
         )
         for t in db_detail.tables
     ]

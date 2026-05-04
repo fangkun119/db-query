@@ -12,6 +12,7 @@ class ColumnMetadata(BaseModel):
     default_value: Optional[str] = None
     ordinal_position: int
     is_primary_key: bool = False
+    comment: Optional[str] = None
 
 
 class TableMetadata(BaseModel):
@@ -21,6 +22,7 @@ class TableMetadata(BaseModel):
     table_name: str
     table_type: str
     columns: list[ColumnMetadata]
+    comment: Optional[str] = None
 
 
 class ColumnMetadataResponse(BaseModel):
@@ -31,6 +33,7 @@ class ColumnMetadataResponse(BaseModel):
     is_nullable: bool
     default_value: Optional[str] = None
     is_primary_key: bool = False
+    comment: Optional[str] = None
 
 
 class TableMetadataResponse(BaseModel):
@@ -40,3 +43,4 @@ class TableMetadataResponse(BaseModel):
     table_name: str
     table_type: str
     columns: list[ColumnMetadataResponse]
+    comment: Optional[str] = None

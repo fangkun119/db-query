@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Tree, Typography } from 'antd';
+import { Tree, Typography, Tooltip } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { TableOutlined } from '@ant-design/icons';
 import type { TableMeta } from '../../types';
@@ -33,7 +33,9 @@ export const SchemaTree: React.FC<SchemaTreeProps> = ({ tables, loading = false 
           key: `${schemaName}.${table.tableName}.${col.name}`,
           title: (
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px', fontFamily: 'sans-serif' }}>
-              <Text strong style={{ fontSize: '13px', fontFamily: 'sans-serif' }}>{col.name}</Text>
+              <Tooltip title={col.comment} mouseEnterDelay={0.3}>
+                <Text strong style={{ fontSize: '13px', fontFamily: 'sans-serif' }}>{col.name}</Text>
+              </Tooltip>
               <span style={{
                 fontSize: '9px',
                 fontWeight: 'bold',
@@ -78,7 +80,9 @@ export const SchemaTree: React.FC<SchemaTreeProps> = ({ tables, loading = false 
           key: `${schemaName}.${table.tableName}`,
           title: (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'sans-serif' }}>
-              <Text strong style={{ fontSize: '13px', fontFamily: 'sans-serif' }}>{table.tableName}</Text>
+              <Tooltip title={table.comment} mouseEnterDelay={0.3}>
+                <Text strong style={{ fontSize: '13px', fontFamily: 'sans-serif' }}>{table.tableName}</Text>
+              </Tooltip>
               <span style={{
                 fontSize: '9px',
                 fontWeight: 'bold',
