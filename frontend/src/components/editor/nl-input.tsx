@@ -7,14 +7,12 @@ interface NLInputProps {
   onGenerate: (prompt: string) => void;
   onExecute: () => void;
   loading?: boolean;
-  error?: string | null;
 }
 
 export const NLInput: React.FC<NLInputProps> = ({
   onGenerate,
   onExecute,
   loading = false,
-  error = null,
 }) => {
   const [prompt, setPrompt] = useState('');
 
@@ -52,16 +50,6 @@ Click &quot;Execute Query&quot; button or press &quot;Ctrl / CMD + Enter&quot; t
           minHeight: '200px',
         }}
       />
-
-      {error && (
-        <Alert
-          message={error}
-          type="error"
-          showIcon
-          closable
-          style={{ marginTop: '12px', fontSize: '12px' }}
-        />
-      )}
     </div>
   );
 };

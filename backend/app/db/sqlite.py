@@ -1,9 +1,10 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import String, DateTime, Text
 from datetime import datetime, timezone
 from pathlib import Path
 import os
+from typing import Optional
 
 
 class Base(DeclarativeBase):
@@ -23,8 +24,8 @@ class DatabaseConnection(Base):
 
 
 _db_path: str | None = None
-_engine: any | None = None
-_async_session_maker: any | None = None
+_engine: Optional[AsyncEngine] = None
+_async_session_maker: Optional[async_sessionmaker[AsyncSession]] = None
 
 
 def get_db_path(expand_path: str = "~/.db_query/db_query.db") -> str:

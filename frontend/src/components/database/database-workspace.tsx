@@ -9,6 +9,15 @@ import { ResultTable } from '../results/result-table';
 import type { DatabaseSummary, DatabaseDetail, QueryResult } from '../../types';
 import { listDbs, deleteDb, getDb, executeQuery, naturalQuery } from '../../services/api';
 import { handleApiError } from '../../utils/errors';
+import {
+  EDITOR_MIN_HEIGHT,
+  EDITOR_MAX_HEIGHT_OFFSET,
+  EDITOR_DEFAULT_HEIGHT,
+  RESIZER_HEIGHT,
+  COLUMN_SPAN_AUTO,
+  COLUMN_SPAN_FULL,
+  COLORS,
+} from '../../constants';
 
 const { Title, Text } = Typography;
 
@@ -21,7 +30,7 @@ interface ColumnProps {
 const Column: React.FC<ColumnProps> = ({ span, style, children }) => (
   <div
     style={{
-      flex: span === 0 ? '0 0 auto' : span,
+      flex: span === COLUMN_SPAN_AUTO ? '0 0 auto' : span,
       minWidth: 0,
       display: 'flex',
       flexDirection: 'column',
@@ -43,12 +52,11 @@ export const DatabaseWorkspace: React.FC = () => {
   const [sqlQuery, setSqlQuery] = useState('');
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [executingQuery, setExecutingQuery] = useState(false);
-  const [nlError, setNlError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'manual' | 'natural'>('manual');
   const [nlPrompt, setNlPrompt] = useState('');
 
   // Resizable state
-  const [editorHeight, setEditorHeight] = useState(360);
+  const [editorHeight, setEditorHeight] = useState(EDITOR_DEFAULT_HEIGHT);
   const [isResizing, setIsResizing] = useState(false);
   const resizeStartY = useRef(0);
   const resizeStartHeight = useRef(0);
@@ -168,9 +176,8 @@ export const DatabaseWorkspace: React.FC = () => {
     }
   };
 
-  const handleNaturalQuery = async (prompt: string) => {
+  const handleNaturalQuery = (prompt: string) => {
     setNlPrompt(prompt);
-    setNlError(null);
   };
 
   // Resizable handlers
@@ -188,8 +195,8 @@ export const DatabaseWorkspace: React.FC = () => {
     const newHeight = resizeStartHeight.current + deltaY;
 
     // Constrain height between min and max
-    const minHeight = 200;
-    const maxHeight = window.innerHeight - 200;
+    const minHeight = EDITOR_MIN_HEIGHT;
+    const maxHeight = window.innerHeight - EDITOR_MAX_HEIGHT_OFFSET;
     const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
 
     setEditorHeight(clampedHeight);
@@ -229,7 +236,7 @@ export const DatabaseWorkspace: React.FC = () => {
       {/* Main Workspace - Three Columns */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Left Column - DB List */}
-        <Column span={0} style={{ width: '260px', borderRight: '1px solid #f0f0f0', backgroundColor: '#fafafa' }}>
+        <Column span={COLUMN_SPAN_AUTO} style={{ width: '260px', borderRight: '1px solid #f0f0f0', backgroundColor: COLORS.BACKGROUND_DARK }}>
           <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', backgroundColor: '#F5F5F5', display: 'flex', alignItems: 'center' }}>
             <DatabaseOutlined style={{ fontSize: '18px', color: '#595959', marginRight: '8px' }} />
             <Title level={5} style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#262626' }}>
@@ -240,7 +247,7 @@ export const DatabaseWorkspace: React.FC = () => {
             <Button
               icon={<PlusOutlined />}
               onClick={() => setFormOpen(true)}
-              style={{ width: '100%', backgroundColor: '#B8860B', color: '#FFFFFF', border: 'none', fontWeight: 600 }}
+              style={{ width: '100%', backgroundColor: COLORS.PRIMARY, color: '#FFFFFF', border: 'none', fontWeight: 600 }}
             >
               ADD DATABASE
             </Button>
@@ -271,7 +278,7 @@ export const DatabaseWorkspace: React.FC = () => {
         <Column span={0} style={{ width: '380px', borderRight: '1px solid #f0f0f0' }}>
           {selectedDatabase ? (
             <>
-              <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', backgroundColor: '#B8860B', display: 'flex', alignItems: 'center' }}>
+              <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', backgroundColor: COLORS.PRIMARY, display: 'flex', alignItems: 'center' }}>
                 <Space style={{ width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Space style={{ alignItems: 'center' }}>
                     <TableOutlined style={{ fontSize: '18px', color: '#FFFFFF' }} />
@@ -283,13 +290,13 @@ export const DatabaseWorkspace: React.FC = () => {
                     icon={<ReloadOutlined spin={refreshing} style={{ color: '#B8860B', fontSize: '16px' }} />}
                     onClick={handleRefresh}
                     loading={refreshing}
-                    style={{ backgroundColor: '#FFFFFF', border: 'none', fontWeight: 700, color: '#B8860B', height: '44px', padding: '0 20px', fontSize: '14px' }}
+                    style={{ backgroundColor: '#FFFFFF', border: 'none', fontWeight: 700, color: COLORS.PRIMARY, height: '44px', padding: '0 20px', fontSize: '14px' }}
                   >
                     REFRESH
                   </Button>
                 </Space>
               </div>
-              <div style={{ height: '60px', padding: '0 12px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', backgroundColor: '#F5F5F5' }}>
+              <div style={{ height: '60px', padding: '0 12px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', backgroundColor: COLORS.BACKGROUND_LIGHT }}>
                 <Input
                   className="schema-search-input"
                   prefix={<SearchOutlined />}
@@ -322,7 +329,7 @@ export const DatabaseWorkspace: React.FC = () => {
         </Column>
 
         {/* Right Column - Query Editor & Results */}
-        <Column span={1} style={{ backgroundColor: '#fff' }}>
+        <Column span={COLUMN_SPAN_FULL} style={{ backgroundColor: '#fff' }}>
           {selectedDatabase ? (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               {/* Query Editor Section with Tabs */}
@@ -337,14 +344,14 @@ export const DatabaseWorkspace: React.FC = () => {
                     onClick={handleExecuteQuery}
                     loading={executingQuery}
                     disabled={activeTab === 'manual' ? !sqlQuery.trim() : !nlPrompt.trim()}
-                    style={{ backgroundColor: '#B8860B', color: '#FFFFFF', border: 'none', fontWeight: 600, height: '44px', padding: '0 20px', fontSize: '14px' }}
+                    style={{ backgroundColor: COLORS.PRIMARY, color: '#FFFFFF', border: 'none', fontWeight: 600, height: '44px', padding: '0 20px', fontSize: '14px' }}
                   >
                     Execute Query
                   </Button>
                 </div>
 
                 {/* Row 2: Tabs - 60px height, aligned with left column */}
-                <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', backgroundColor: '#F5F5F5' }}>
+                <div style={{ height: '60px', padding: '0 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', backgroundColor: COLORS.BACKGROUND_LIGHT }}>
                   <Tabs
                     activeKey={activeTab}
                     onChange={(key) => setActiveTab(key as 'manual' | 'natural')}
@@ -372,7 +379,6 @@ export const DatabaseWorkspace: React.FC = () => {
                         onGenerate={handleNaturalQuery}
                         onExecute={handleExecuteQuery}
                         loading={executingQuery}
-                        error={nlError}
                       />
                     </div>
                   )}
@@ -383,8 +389,8 @@ export const DatabaseWorkspace: React.FC = () => {
               <div
                 onMouseDown={handleMouseDown}
                 style={{
-                  height: '4px',
-                  backgroundColor: '#f0f0f0',
+                  height: `${RESIZER_HEIGHT}px`,
+                  backgroundColor: COLORS.BORDER,
                   cursor: 'row-resize',
                   display: 'flex',
                   alignItems: 'center',
@@ -397,14 +403,14 @@ export const DatabaseWorkspace: React.FC = () => {
                   zIndex: 10,
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d9d9d9'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0f0f0'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = COLORS.BORDER; }}
               >
                 <div style={{ width: '40px', height: '2px', backgroundColor: '#b0b0b0', borderRadius: '1px' }} />
               </div>
 
               {/* Results Section */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#fff', minHeight: 0 }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, backgroundColor: '#F5F5F5' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, backgroundColor: COLORS.BACKGROUND_LIGHT }}>
                   <Space>
                     <Title level={5} style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
                       RESULTS
@@ -440,7 +446,7 @@ export const DatabaseWorkspace: React.FC = () => {
                         fontSize: '11px',
                         fontWeight: 600,
                         padding: '2px 8px',
-                        backgroundColor: '#B8860B',
+                        backgroundColor: COLORS.PRIMARY,
                         color: '#ffffff',
                         borderRadius: '4px',
                         cursor: 'pointer',

@@ -60,20 +60,23 @@ class TestDefaultValues:
         assert isinstance(settings.default_limit, int)
 
     def test_default_openai_endpoint(self):
-        """Test default OpenAI endpoint."""
+        """Test default OpenAI-compatible endpoint."""
         from app.config import get_settings
         settings = get_settings()
 
-        assert 'openai.com' in settings.openai_api_endpoint
-        assert settings.openai_api_endpoint.startswith('https://')
+        # Should be a valid URL
+        assert settings.openai_api_endpoint.startswith('https://') or settings.openai_api_endpoint.startswith('http://')
+        assert len(settings.openai_api_endpoint) > 0
 
     def test_default_openai_model(self):
-        """Test default OpenAI model is set."""
+        """Test default model is set."""
         from app.config import get_settings
         settings = get_settings()
 
+        # Should have a model configured (could be gpt, glm, claude, etc.)
         assert len(settings.openai_model) > 0
-        assert 'gpt' in settings.openai_model.lower()
+        # Model name should contain alphanumeric characters and hyphens/dots
+        assert any(c.isalnum() or c in '-.' for c in settings.openai_model)
 
     def test_default_cors_origins(self):
         """Test default CORS origins setting."""

@@ -19,7 +19,9 @@ interface DatabaseListProps {
 }
 
 const statusConfig: Record<string, { color: string; text: string }> = {
+  active: { color: 'success', text: 'Active' },
   error: { color: 'error', text: 'Error' },
+  connecting: { color: 'processing', text: 'Connecting' },
 };
 
 export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedName, onDelete, onClick }) => {
