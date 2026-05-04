@@ -102,7 +102,7 @@
 
 ### Prerequisites
 
-- [X] T030.5 [US3] Configure OpenAI API credentials in `~/db_query.env` — create user-level environment file with OPENAI_API_KEY, OPENAI_API_ENDPOINT, OPENAI_MODEL fields; update `backend/app/config.py` to use Path.home() / "db_query.env" as env_file location
+- [X] T030.5 [US3] Configure OpenAI API credentials in `~/.db_query/env.properties` — create user-level environment file at ~/.db_query/env.properties with OPENAI_API_KEY, OPENAI_API_ENDPOINT, OPENAI_MODEL fields; update `backend/app/config.py` to use Path.home() / ".db_query" / "env.properties" as env_file location
 
 ### Implementation for User Story 3
 

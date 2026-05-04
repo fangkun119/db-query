@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
 
     class Config:
-        env_file = Path.home() / "db_query.env"
+        env_file = Path.home() / ".db_query" / "env.properties"
         extra = "ignore"
 
 
