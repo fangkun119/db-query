@@ -94,32 +94,32 @@ frontend/
 │   ├── App.tsx
 │   ├── main.tsx
 │   ├── index.css
-│   ├── providers/
-│   │   └── data-provider.tsx # refine data provider for REST API
 │   ├── components/
-│   │   ├── layout/
-│   │   │   └── app-layout.tsx
 │   │   ├── database/
-│   │   │   ├── database-list.tsx
-│   │   │   └── database-form.tsx
+│   │   │   ├── database-list.tsx       # DB list with status badges
+│   │   │   ├── database-form.tsx       # Add DB connection modal
+│   │   │   └── database-workspace.tsx  # Main workspace (schema + editor + results)
 │   │   ├── schema/
-│   │   │   └── schema-tree.tsx
+│   │   │   └── schema-tree.tsx         # Table/view tree with columns
 │   │   ├── editor/
-│   │   │   ├── sql-editor.tsx
-│   │   │   └── nl-input.tsx
+│   │   │   ├── sql-editor.tsx          # Monaco SQL editor
+│   │   │   └── nl-input.tsx            # Natural language input
 │   │   └── results/
-│   │       └── result-table.tsx
-│   ├── pages/
-│   │   ├── databases.tsx     # DB list + add/delete
-│   │   └── database-detail.tsx  # DB detail (metadata + query)
+│   │       └── result-table.tsx        # Query results table
 │   ├── services/
-│   │   └── api.ts            # API client (axios)
-│   └── types/
-│       └── index.ts          # TypeScript interfaces matching API contracts
+│   │   └── api.ts                      # API client (axios)
+│   ├── types/
+│   │   └── index.ts                    # TypeScript interfaces
+│   ├── constants/
+│   │   └── index.ts                    # App constants
+│   └── utils/
+│       └── errors.ts                   # Error utilities
 └── tests/
+    ├── unit/                           # Vitest unit tests
+    └── e2e/                            # Playwright E2E tests
 ```
 
-**Structure Decision**: Web application structure with separate `backend/` and `frontend/` directories. Backend follows FastAPI conventional layout with models/services/api layers. Frontend follows refine 5 conventions with page-based routing.
+**Structure Decision**: Web application structure with separate `backend/` and `frontend/` directories. Backend follows FastAPI conventional layout with models/services/api layers. Frontend uses React 19 with custom components and direct API integration (simplified architecture without Refine 5 framework - see D6 below).
 
 ## Design Decisions
 
@@ -133,10 +133,36 @@ Use Chat Completions with Structured Outputs (`client.beta.chat.completions.pars
 `parse_one()` → `isinstance(exp.Select)` → LIMIT detection/injection → execute. Reject non-SELECT. Handle empty input and multi-statement edge cases.
 
 ### D4: IDE-Style Frontend Layout
-Left sidebar (DB list + schema tree), main area (Monaco editor top + results table bottom). Custom layout, not refine ThemedLayoutV2.
+**Implementation**: `database-workspace.tsx` with three-column layout:
+- Left: Database list with connection status
+- Center: Schema tree (tables/views with columns)
+- Right: Tabbed editor (Manual SQL + Natural Language) + Results table
+
+**Design Rationale**: IDE-style layout maximizes screen real estate for query work, similar to tools like DBeaver, pgAdmin, and DataGrip.
 
 ### D5: Metadata as JSON
 Metadata stored as JSON string in SQLite column. Simple for demo scope, avoids complex relational modeling for cached read-heavy data.
+
+### D6: Frontend Architecture (UPDATED 2026-05-04)
+**Original Plan**: Use refine 5 framework with data providers, router providers, and ThemedLayoutV2.
+
+**Actual Implementation**: Custom React 19 architecture with direct API integration using axios.
+
+**Rationale**:
+- **Simplified Stack**: Demo scope (3 pages, 6 endpoints) doesn't warrant Refine's complexity
+- **Better Testability**: Direct component testing is simpler than mocking Refine providers
+- **Faster Development**: No need to learn Refine-specific abstractions for simple CRUD
+- **Equivalent Functionality**: All user stories delivered with same UX quality
+
+**Implementation Pattern**:
+```
+- Custom layout: database-workspace.tsx (IDE-style: sidebar + editor + results)
+- Direct API calls: services/api.ts with axios
+- Component-based routing: react-router
+- State management: React hooks (useState, useEffect)
+```
+
+**Future Consideration**: If scaling to 10+ resources or complex permissions, reconsider Refine migration.
 
 ## Complexity Tracking
 

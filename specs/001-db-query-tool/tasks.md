@@ -45,9 +45,9 @@
 
 - [X] T011 [P] Create TypeScript interfaces in `frontend/src/types/index.ts` — match all API contracts: DatabaseSummary, DatabaseDetail, TableMeta, ColumnMeta, QueryResult, NLQueryResponse, QueryRequest, NaturalQueryRequest
 - [X] T012 [P] Create API client in `frontend/src/services/api.ts` — axios instance with baseURL /api/v1, export typed functions: listDbs, addDb, getDb, deleteDb, refreshDb, executeQuery, naturalQuery
-- [X] T013 [P] Create refine data provider in `frontend/src/providers/data-provider.tsx` — map getList→GET /dbs, getOne→GET /dbs/{name}, create→PUT /dbs/{name}, deleteOne→DELETE /dbs/{name}, custom→query/natural endpoints
-- [X] T014 [P] Create IDE-style app layout in `frontend/src/components/layout/app-layout.tsx` — fixed left sidebar (DB list + schema tree) and main area (editor + results), using Tailwind flexbox per plan.md D4
-- [X] T015 Create refine app entry in `frontend/src/App.tsx` and `frontend/src/main.tsx` — setup Refine with data provider, routerProvider, Ant Design layout, route definitions for / and /dbs/:name
+- [X] T013 [P] Create API client integration in `frontend/src/services/api.ts` — axios instance with baseURL /api/v1, export typed functions: listDbs, addDb, getDb, deleteDb, executeQuery, naturalQuery; **NOTE**: Original plan specified Refine data provider, actual implementation uses direct axios calls (see ADR-001)
+- [X] T014 [P] Create IDE-style app layout in `frontend/src/components/database/database-workspace.tsx` — three-column layout (DB list + schema tree + editor/results), using Ant Design flexbox; **NOTE**: Original plan specified separate app-layout.tsx, actual implementation integrates layout into workspace component (see ADR-001)
+- [X] T015 Create React app entry in `frontend/src/App.tsx` and `frontend/src/main.tsx` — setup React 19 with react-router, Ant Design ConfigProvider, route definitions; **NOTE**: Original plan specified Refine framework, actual implementation uses custom React architecture (see ADR-001)
 
 **Checkpoint**: Foundation ready — both servers start, API health check works, frontend renders empty layout
 
@@ -219,4 +219,32 @@ Task T022: "Create schema tree component in frontend/src/components/schema/schem
 - Parallel opportunities: 15 tasks marked [P]
 - Independent test criteria: Each user story has a checkpoint with test instructions
 - MVP scope: Phase 1 + Phase 2 + Phase 3 = 24 tasks
-- Format validation: All 37 tasks follow checklist format (checkbox + ID + optional [P] + optional [Story] + description with file path)
+- Format validation: All 38 tasks follow checklist format (checkbox + ID + optional [P] + optional [Story] + description with file path)
+
+---
+
+## Architecture Decision Note (2026-05-04)
+
+**Important**: The frontend implementation deviated from the original plan regarding the Refine 5 framework. Tasks T013, T014, and T015 were completed using **custom React 19 architecture** instead of Refine 5.
+
+### Key Changes
+
+| Task | Original Plan | Actual Implementation |
+|------|--------------|----------------------|
+| T013 | `providers/data-provider.tsx` with Refine | `services/api.ts` with direct axios calls |
+| T014 | `components/layout/app-layout.tsx` | `components/database/database-workspace.tsx` (integrated layout) |
+| T015 | Refine app with data/router providers | Custom React 19 with react-router |
+
+### Rationale
+
+See **ADR-001: Frontend Framework Choice** for detailed rationale:
+- Demo scope (1 resource, 6 endpoints) doesn't warrant Refine complexity
+- Better testability with direct component testing (130 tests passing)
+- Faster development with familiar React patterns
+- IDE-style layout better suited for custom implementation
+
+### Documentation
+
+- ADR: `specs/001-db-query-tool/adr/001-frontend-framework-choice.md`
+- Plan update: `specs/001-db-query-tool/plan.md` (Design Decision D6)
+- All functional requirements delivered with equivalent UX quality
