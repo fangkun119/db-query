@@ -5,12 +5,14 @@ const { TextArea } = Input;
 
 interface NLInputProps {
   onGenerate: (prompt: string) => void;
+  onExecute: () => void;
   loading?: boolean;
   error?: string | null;
 }
 
 export const NLInput: React.FC<NLInputProps> = ({
   onGenerate,
+  onExecute,
   loading = false,
   error = null,
 }) => {
@@ -27,7 +29,7 @@ export const NLInput: React.FC<NLInputProps> = ({
     // Execute on Ctrl+Enter or Cmd+Enter
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
-      // The prompt is already saved via handleChange
+      onExecute();
     }
   };
 

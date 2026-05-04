@@ -317,6 +317,7 @@ export const DatabaseWorkspace: React.FC = () => {
                         children: (
                           <NLInput
                             onGenerate={handleNaturalQuery}
+                            onExecute={handleExecuteQuery}
                             loading={executingQuery}
                             error={nlError}
                           />
