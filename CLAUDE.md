@@ -1,7 +1,8 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-at `specs/001-db-query-tool/plan.md`
+shell commands, and other important information, read the current plans:
+- Phase 6 implementation: `specs/001-db-query-tool/plan.md`
+- MySQL database support: `specs/002-mysql-support/plan.md`
 <!-- SPECKIT END -->
 
 ## Development Commands

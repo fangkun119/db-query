@@ -1,0 +1,453 @@
+###############################################################################
+# DB Query Tool - MySQL Database API Tests
+#
+# Prerequisites:
+# 1. Backend server running: make backend-dev
+# 2. MySQL test database created: mysql -u root -p < test/db_scripts/mysql/todo_db.sql
+# 3. VSCode REST Client extension installed
+#
+# Usage:
+# - Click "Send Request" above each request
+# - Or use keyboard shortcut: Ctrl+Alt+R (Windows/Linux) / Cmd+Alt+R (Mac)
+###############################################################################
+
+@baseUrl = http://localhost:8000/api/v1
+@mysqlUrl = mysql://todo_db:todo_tb@localhost:3306/todo_db
+
+###############################################################################
+# Health Check
+###############################################################################
+
+### Health Check - Root
+GET http://localhost:8000/
+
+### Health Check - OpenAPI Docs
+GET http://localhost:8000/docs
+
+###############################################################################
+# Database Management APIs
+###############################################################################
+
+### 1. List All Databases (Empty initially)
+GET {{baseUrl}}/databases
+
+### 2. Add MySQL Database - todo_db
+PUT {{baseUrl}}/databases/todo_db
+Content-Type: application/json
+
+{
+  "url": "{{mysqlUrl}}"
+}
+
+### 3. List All Databases (Should show todo_db with dbType=mysql)
+GET {{baseUrl}}/databases
+
+### 4. Get Database Details - todo_db
+GET {{baseUrl}}/databases/todo_db
+
+### 5. Refresh Database Metadata - todo_db
+POST {{baseUrl}}/databases/todo_db/refresh
+
+###############################################################################
+# Query Execution APIs - Basic Queries
+###############################################################################
+
+### 6. Simple SELECT with LIMIT
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM tasks LIMIT 5"
+}
+
+### 7. SELECT without LIMIT (should auto-inject LIMIT 1000)
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM tasks"
+}
+
+### 8. Query with JOIN
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT p.name as project_name, COUNT(t.id) as task_count FROM projects p LEFT JOIN tasks t ON p.id = t.project_id GROUP BY p.id, p.name ORDER BY task_count DESC"
+}
+
+### 9. Query with Aggregate Functions
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT COUNT(*) as total_tasks, AVG(estimated_hours) as avg_hours FROM tasks"
+}
+
+### 10. Query with GROUP BY and HAVING
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT status, COUNT(*) as count FROM tasks GROUP BY status HAVING COUNT(*) > 10"
+}
+
+### 11. Query with ORDER BY
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT title, status, priority FROM tasks ORDER BY priority DESC, created_at ASC"
+}
+
+### 12. Query with WHERE clause
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT id, title, status FROM tasks WHERE status = 'in_progress'"
+}
+
+### 13. Query with multiple JOINs
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT t.title, u.username as assignee, p.name as project_name FROM tasks t LEFT JOIN users u ON t.assignee_id = u.id LEFT JOIN projects p ON t.project_id = p.id WHERE t.status = 'in_progress' ORDER BY t.created_at DESC"
+}
+
+### 14. Query with CASE statement
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT title, CASE WHEN priority = 'critical' THEN 'Urgent' WHEN priority = 'high' THEN 'Important' ELSE 'Normal' END as urgency FROM tasks LIMIT 5"
+}
+
+###############################################################################
+# MySQL-Specific Syntax Tests
+###############################################################################
+
+### 15. MySQL String Concatenation (CONCAT)
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT CONCAT(title, ' - ', status) as task_summary FROM tasks LIMIT 5"
+}
+
+### 16. MySQL Case-Insensitive Search (LIKE)
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT title, status FROM tasks WHERE title LIKE '%bug%'"
+}
+
+### 17. MySQL Reserved Keywords (backtick identifiers)
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT `key`, `order`, `group` FROM labels LIMIT 5"
+}
+
+### 18. MySQL Current Date/Time Functions
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT CURDATE() as today, NOW() as current_time"
+}
+
+### 19. MySQL Boolean Literals
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT id, title, status FROM tasks WHERE status = 'done' ORDER BY created_at DESC LIMIT 5"
+}
+
+### 20. MySQL Subquery
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT title, estimated_hours FROM tasks WHERE estimated_hours > (SELECT AVG(estimated_hours) FROM tasks) ORDER BY estimated_hours DESC LIMIT 5"
+}
+
+### 21. MySQL IN Clause
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT id, title, status FROM tasks WHERE status IN ('in_progress', 'todo', 'backlog') ORDER BY created_at DESC LIMIT 10"
+}
+
+### 22. MySQL DATE Functions
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT title, DATE(due_date) as due_day FROM tasks WHERE due_date IS NOT NULL ORDER BY due_date ASC LIMIT 5"
+}
+
+###############################################################################
+# Query Execution - Empty Database Pattern
+###############################################################################
+
+### 23. Simple expression query (no table)
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT 1 as test_column, 'hello' as test_string, 3.14 as pi"
+}
+
+###############################################################################
+# Error Handling Tests
+###############################################################################
+
+### 24. Error: DELETE not allowed
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "DELETE FROM tasks WHERE id = 1"
+}
+
+### 25. Error: INSERT not allowed
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "INSERT INTO tasks (title) VALUES ('Test task')"
+}
+
+### 26. Error: UPDATE not allowed
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "UPDATE tasks SET status = 'done'"
+}
+
+### 27. Error: Non-existent table
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM nonexistent_table"
+}
+
+### 28. Error: Invalid SQL syntax
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELCT * FROM tasks"
+}
+
+### 29. Error: Empty SQL
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": ""
+}
+
+### 30. Error: Non-existent database connection
+POST {{baseUrl}}/databases/nonexistent_todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT 1"
+}
+
+### 31. Error: Invalid URL format (missing mysql scheme)
+PUT {{baseUrl}}/databases/invalid_mysql_db
+Content-Type: application/json
+
+{
+  "url": "localhost:3306/test"
+}
+
+### 32. Error: Connection failed (wrong credentials)
+PUT {{baseUrl}}/databases/failed_mysql_db
+Content-Type: application/json
+
+{
+  "url": "mysql://wrong:wrong@localhost:3306/nodb"
+}
+
+### 33. Error: Duplicate database name
+PUT {{baseUrl}}/databases/todo_db
+Content-Type: application/json
+
+{
+  "url": "{{mysqlUrl}}"
+}
+
+### 34. Error: Get non-existent database
+GET {{baseUrl}}/databases/nonexistent_db
+
+### 35. Error: Delete non-existent database
+DELETE {{baseUrl}}/databases/nonexistent_db
+
+###############################################################################
+# Natural Language to SQL Tests
+###############################################################################
+
+### 36. NL to SQL: Simple query
+POST {{baseUrl}}/databases/todo_db/query/natural
+Content-Type: application/json
+
+{
+  "prompt": "Show me all tasks"
+}
+
+### 37. NL to SQL: Filter with condition
+POST {{baseUrl}}/databases/todo_db/query/natural
+Content-Type: application/json
+
+{
+  "prompt": "Show me high priority tasks that are in progress"
+}
+
+### 38. NL to SQL: Top N query
+POST {{baseUrl}}/databases/todo_db/query/natural
+Content-Type: application/json
+
+{
+  "prompt": "Show me the top 10 tasks by estimated hours"
+}
+
+### 39. NL to SQL: Join query
+POST {{baseUrl}}/databases/todo_db/query/natural
+Content-Type: application/json
+
+{
+  "prompt": "Show me tasks with their project names and assignee names"
+}
+
+### 40. NL to SQL: Aggregate query
+POST {{baseUrl}}/databases/todo_db/query/natural
+Content-Type: application/json
+
+{
+  "prompt": "Count the number of tasks per status"
+}
+
+### 41. NL to SQL: Date-based query
+POST {{baseUrl}}/databases/todo_db/query/natural
+Content-Type: application/json
+
+{
+  "prompt": "Show me tasks due this week"
+}
+
+### 42. NL to SQL: Complex query
+POST {{baseUrl}}/databases/todo_db/query/natural
+Content-Type: application/json
+
+{
+  "prompt": "Show me critical and high priority tasks created in the last 7 days that are not completed"
+}
+
+###############################################################################
+# Metadata Validation Tests
+###############################################################################
+
+### 43. Verify database type标识 in response
+GET {{baseUrl}}/databases
+
+### 44. Verify metadata includes tables only (no views in todo_db)
+GET {{baseUrl}}/databases/todo_db
+
+###############################################################################
+# Cleanup (Optional - Run to reset test state)
+###############################################################################
+
+### Delete Database - todo_db
+DELETE {{baseUrl}}/databases/todo_db
+
+### Verify deletion (Should return empty array or not show todo_db)
+GET {{baseUrl}}/databases
+
+###############################################################################
+# Mixed Database Tests (PostgreSQL + MySQL coexistence)
+###############################################################################
+
+### 45. Add PostgreSQL database (if not exists)
+PUT {{baseUrl}}/databases/interview_db
+Content-Type: application/json
+
+{
+  "url": "postgresql://postgres@localhost:5432/interview_db"
+}
+
+### 46. List both databases (Should show PostgreSQL and MySQL)
+GET {{baseUrl}}/databases
+
+### 47. Query PostgreSQL database
+POST {{baseUrl}}/databases/interview_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM departments LIMIT 3"
+}
+
+### 48. Query MySQL database (same session)
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM tasks LIMIT 3"
+}
+
+### 49. Verify different dbType values
+GET {{baseUrl}}/databases
+
+###############################################################################
+# Edge Case Tests
+###############################################################################
+
+### 50. Query with special characters in string
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM tasks WHERE title LIKE '%\\_%' ESCAPE '\\'"
+}
+
+### 51. Query with NULL handling
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT title, start_date, completed_at FROM tasks WHERE completed_at IS NULL ORDER BY created_at DESC LIMIT 5"
+}
+
+### 52. Query with multiple conditions
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM tasks WHERE status = 'in_progress' AND priority IN ('high', 'critical') ORDER BY priority DESC, created_at ASC LIMIT 10"
+}
+
+### 53. Query with UNION (if applicable schema)
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT 'backlog' as status, COUNT(*) as count FROM tasks WHERE status = 'backlog' UNION ALL SELECT 'todo', COUNT(*) FROM tasks WHERE status = 'todo'"
+}
+
+### 54. Query with LIMIT and OFFSET
+POST {{baseUrl}}/databases/todo_db/query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM tasks ORDER BY created_at DESC LIMIT 5 OFFSET 10"
+}

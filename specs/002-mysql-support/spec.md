@@ -102,7 +102,7 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 ### Measurable Outcomes
 
 - **SC-001**: Users can successfully add a MySQL database connection and see it appear in the database list with correct type标识 within 10 seconds of submission
-- **SC-002**: MySQL database metadata is extracted and displayed with 100% accuracy for all accessible tables and columns when a database is added or refreshed
+- **SC-002**: MySQL database metadata is extracted and displayed with 100% accuracy for all accessible tables and columns when a database is added or refreshed; metadata extraction completes within 30 seconds for databases with up to 25 tables (timeout prevents longer waits)
 - **SC-003**: Users can execute MySQL SELECT queries and see results formatted in a table within 3 seconds for queries returning up to 100 rows
 - **SC-004**: Natural language queries for MySQL databases generate syntactically correct MySQL SQL in at least 90% of common query patterns including simple filtering, sorting, top-N queries, and basic joins
 - **SC-005**: The system supports storing at least 10 database connection configurations (mix of PostgreSQL and MySQL) with no enforced limit on quantity; actual database queries use transient connections (established per query, released immediately) via NullPool pattern, avoiding long-term connection pool occupation

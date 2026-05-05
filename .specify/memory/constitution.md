@@ -1,13 +1,12 @@
 <!--
-Version change: (initial) → 1.0.0
-Rationale: Initial constitution establishment for db-query demo project
+Version change: 1.0.0 → 1.1.0
+Rationale: MINOR amendment to add MySQL database support alongside PostgreSQL
 
-Modified principles: N/A (initial creation)
+Modified principles:
+- Principle I: Extended from "PostgreSQL-First" to "PostgreSQL and MySQL Support"
 
 Added sections:
-- Core Principles (3 principles)
-- Technical Constraints (4 constraints)
-- Governance (2 rules)
+- MySQL database drivers in Technology Stack Constraints
 
 Removed sections: N/A
 
@@ -118,17 +117,16 @@ Sync Impact Report:
 
 ## Core Principles
 
-### I. PostgreSQL-First Database Support
+### I. PostgreSQL and MySQL Database Support
 
-**Principle**: The system MUST prioritize PostgreSQL support while maintaining extensibility for future database types.
+**Principle**: The system MUST support PostgreSQL and MySQL databases while maintaining extensibility for future database types.
 
-- PostgreSQL is the primary supported database type for version 1.0
-- Metadata extraction MUST use PostgreSQL-specific system catalog queries
-- Architecture MUST include extension points for additional database types (MySQL, etc.)
-- No generic database abstraction layer in initial version
-- Database-specific logic MUST be isolated for future extraction
+- PostgreSQL and MySQL are the supported database types for version 1.1
+- Metadata extraction MUST use database-specific system catalog queries
+- Architecture MUST include extension points for additional database types
+- Database-specific logic MUST be isolated per database type (no generic abstraction layer)
 
-**Rationale**: Focusing on PostgreSQL ensures robust implementation rather than shallow multi-database support. Extension points allow future database types without premature abstraction.
+**Rationale**: Supporting both PostgreSQL and MySQL broadens usability while maintaining implementation quality through database-specific logic. Extension points allow future database types without premature abstraction.
 
 ### II. SQL Validation and Safety
 
@@ -186,7 +184,7 @@ Sync Impact Report:
 - **Language**: Python 3.12+
 - **Runtime**: uv for dependency management
 - **Framework**: FastAPI
-- **Dependencies**: sqlglot, OpenAI SDK, database drivers (psycopg3 for PostgreSQL)
+- **Dependencies**: sqlglot, OpenAI SDK, database drivers (asyncpg for PostgreSQL, aiomysql/pymysql for MySQL)
 - **Storage**: SQLite local file for connections and metadata
 
 ### Frontend
@@ -211,7 +209,7 @@ Sync Impact Report:
 
 ### Testing Strategy
 - Unit tests for SQL validation logic (sqlglot parsing)
-- Integration tests for metadata extraction from PostgreSQL
+- Integration tests for metadata extraction from PostgreSQL and MySQL
 - Manual testing for LLM query generation quality
 - No automated frontend testing required for v1.0
 
@@ -239,4 +237,4 @@ Sync Impact Report:
 - This constitution v1.0.0 represents initial project governance
 - Future amendments update this section with change rationale
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-04-26
+**Version**: 1.1.0 | **Ratified**: 2026-04-26 | **Last Amended**: 2026-05-05
