@@ -29,6 +29,8 @@ make test-api          # Show REST Client testing instructions
 
 ## Test Databases
 
+### PostgreSQL
+
 | Database | Connection URL | Purpose |
 |----------|----------------|---------|
 | `interview_db` | `postgresql://postgres@localhost:5432/interview_db` | Full-featured test data (23 tables) |
@@ -37,9 +39,22 @@ make test-api          # Show REST Client testing instructions
 **Schema highlights**: `positions`, `candidates`, `candidate_position_applications`, `interview_schedules`, `interview_results`, `offers`, `employees`, `departments`
 
 ```bash
-# Recreate test databases
+# Recreate PostgreSQL test databases
 psql -U postgres -f test/db_scripts/postgres/interview_db.sql
 psql -U postgres -c "DROP DATABASE IF EXISTS empty_db; CREATE DATABASE empty_db WITH OWNER = postgres ENCODING 'UTF8';"
+```
+
+### MySQL
+
+| Database | Connection URL | Purpose |
+|----------|----------------|---------|
+| `todo_db` | `mysql://todo_db:todo_tb@localhost:3306/todo_db` | Todo management system (20 tables, 2000+ tasks) |
+
+**Schema highlights**: `users`, `organizations`, `projects`, `tasks`, `sprints`, `task_comments`, `task_history`, `time_entries`, `labels`, `notifications`
+
+```bash
+# Recreate MySQL test database
+mysql -u root -p < test/db_scripts/mysql/todo_db.sql
 ```
 
 ## API Testing
