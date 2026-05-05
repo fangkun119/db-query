@@ -129,10 +129,10 @@ class MetadataService:
 
         except asyncio.TimeoutError:
             logger.error("Metadata retrieval timed out")
-            return False, "元数据检索超时，请检查数据库连接状态", None
+            return False, "Metadata retrieval timed out. Please check your database connection status.", None
         except Exception as e:
             logger.error(f"Failed to retrieve metadata: {str(e)}")
-            return False, f"检索元数据失败：{str(e)}", None
+            return False, f"Failed to retrieve metadata: {str(e)}", None
         finally:
             if engine:
                 await engine.dispose()

@@ -7,7 +7,7 @@ import SchemaTree from '../schema/schema-tree';
 import { SqlEditor, NLInput } from '../editor';
 import { ResultTable } from '../results/result-table';
 import type { DatabaseSummary, DatabaseDetail, QueryResult } from '../../types';
-import { listDbs, deleteDb, getDb, executeQuery, naturalQuery } from '../../services/api';
+import { listDbs, deleteDb, getDb, refreshDb, executeQuery, naturalQuery } from '../../services/api';
 import { handleApiError } from '../../utils/errors';
 import {
   EDITOR_MIN_HEIGHT,
@@ -121,7 +121,7 @@ export const DatabaseWorkspace: React.FC = () => {
 
     setRefreshing(true);
     try {
-      const data = await getDb(selectedDatabase.name);
+      const data = await refreshDb(selectedDatabase.name);
       setSelectedDatabase(data);
       message.success('Metadata refreshed');
     } catch (error: unknown) {

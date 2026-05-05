@@ -34,6 +34,11 @@ export const getDb = async (name: string): Promise<DatabaseDetail> => {
   return response.data;
 };
 
+export const refreshDb = async (name: string): Promise<DatabaseDetail> => {
+  const response = await api.post<DatabaseDetail>(`/databases/${encodeURIComponent(name)}/refresh`);
+  return response.data;
+};
+
 export const deleteDb = async (name: string): Promise<void> => {
   await api.delete(`/databases/${encodeURIComponent(name)}`);
 };

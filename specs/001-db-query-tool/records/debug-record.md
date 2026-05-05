@@ -409,7 +409,7 @@ Phase 6 是跨切面改进阶段，重点是完善日志系统、统一错误响
 | 后端单元测试 | ✅ | 98/98 通过 |
 | 前端单元测试 | ✅ | 130/130 通过（新增 27 个） |
 
-### Phase 6 总结
+### Phase 6 总结（初次完成）
 
 | 维度 | 结果 |
 |------|------|
@@ -418,5 +418,81 @@ Phase 6 是跨切面改进阶段，重点是完善日志系统、统一错误响
 | 测试通过率 | 100% (228/228) |
 | 代码质量 | 生产就绪 |
 
-**Phase 6 无新增 Bug，所有工作顺利交付。**
+**Phase 6 初次完成，无新增 Bug。**
+
+---
+
+## Phase 6 自测阶段 - Bug 修复
+
+### Bug 6.001 错误消息中文化与全站英文化冲突 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | Phase 6 实现"错误消息中文化"后，发现与 Phase 4.9 的"全站英文化"冲突 | 1. 检查 Phase 4.9 记录：`connection.py`、`metadata.py`、`query.py`、`validator.py` 已将错误消息改为英文；2. Phase 6 又改回中文；3. 前端 UI 已英文化，后端 API 返回中文错误消息导致用户体验不一致 |
+| 原因 | Phase 6 任务 T036"API 错误响应中文化"与 Phase 4.9 的"全站英文化"决策冲突 | Phase 4.9 的英文化决策是最终规范，Phase 6 的中文化任务是错误的 |
+| 修复 | 将所有错误消息改回英文 | `connection.py`：`"仅支持 PostgreSQL 连接"` → `"Only PostgreSQL connections are supported"`；`metadata.py`：`"元数据检索超时"` → `"Metadata retrieval timed out"`；`nl_to_sql.py`：所有 OpenAI 异常消息英文化 |
+
+### Bug 6.002 系统提示词中文化影响 NL→SQL 质量 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | NL to SQL 系统提示词为中文，但前端已英文化，用户可能用英文提问 | 1. 检查 `nl_to_sql.py`：系统提示词为中文"你是一个专业的 PostgreSQL SQL 生成助手"；2. 前端占位符为英文；3. 英文提问 + 中文系统提示词可能导致生成质量下降 |
+| 原因 | Phase 5 实现 NL to SQL 时使用中文提示词，未考虑国际化 | 与 Phase 4.9 的全站英文化不一致 |
+| 修复 | 系统提示词英文化，添加更详细的示例和指导 | 新增 8 个示例（中英双语）、枚举值提取、外键关系摘要、多行 SQL 支持等增强；提示词从 150 字扩展到 800+ 字 |
+
+### Bug 6.003 API 端点简化导致性能问题 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | Phase 4.8 简化 API 后，`GET /dbs/{name}` 总是强制刷新元数据 | 1. 检查 `databases.py`：`force_refresh=True`；2. 每次访问数据库详情页都重新查询 `information_schema`；3. 大型数据库（100+ 表）会导致明显延迟 |
+| 原因 | Phase 4.8 移除 `refresh` 端点，将刷新逻辑合并到 `get` 端点 | 简化过度，忽略了缓存机制的性能价值 |
+| 修复 | 恢复 `POST /dbs/{name}/refresh` 端点，`GET /dbs/{name}` 改为使用缓存 | `GET` 端点 `force_refresh=False`，`refresh` 端点 `force_refresh=True`；超时时返回 504 状态码 |
+
+### Bug 6.004 OpenAI 结构化输出兼容性问题 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | Phase 5 的回退机制仍先尝试结构化输出，增加不必要的 API 调用 | 1. 检查 `nl_to_sql.py`：先调用 `beta.chat.completions.parse`，失败后回退到 `chat.completions.create`；2. 智谱 AI 等提供商不支持结构化输出，每次都会失败；3. 增加延迟和错误日志 |
+| 原因 | Phase 5 Bug 5.002 修复时保留了"先尝试结构化输出"的逻辑 | 优化不足，应直接使用文本模式 |
+| 修复 | 移除结构化输出尝试，统一使用 `chat.completions.create` + `_extract_sql_from_text` | 新增专门异常处理：`AuthenticationError`、`RateLimitError`、`APITimeoutError`、`APIConnectionError`、`InternalServerError`、`APIError` |
+
+### Bug 6.005 SQL 提取正则表达式不够健壮 (后端)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | 多行 SELECT 语句无法正确提取 | 1. 检查 `_extract_sql_from_text`：正则表达式 `r"(SELECT\s+.*?;?)(?:\n|$)"`；2. 非贪婪匹配 `.*?` 在多行时提前终止；3. 复杂 JOIN 查询提取失败 |
+| 原因 | 正则表达式使用 `.*?` 非贪婪匹配，遇到换行符或分号就停止 | 未考虑多行 SQL 语句的场景 |
+| 修复 | 改为 `r"(SELECT[^;]+;?)\s*$"`，使用 `[^;]+` 匹配除分号外的所有字符 | 返回最长匹配（`max(matches, key=len)`），支持多行 SQL |
+
+### Bug 6.006 配置文档与实际路径不一致 (文档)
+
+| 项目 | 内容 | 调试过程 |
+|------|------|----------|
+| 现象 | `quickstart.md` 中配置方式为环境变量，但实际使用配置文件 | 1. 检查 commit 9f2a55a：配置路径已从 `~/db_query.env` 迁移到 `~/.db_query/env.properties`；2. `quickstart.md` 仍使用 `export OPENAI_API_KEY` 方式；3. 用户按照文档操作会失败 |
+| 原因 | commit 9f2a55a 重构配置路径时，未同步更新 `quickstart.md` | 文档与实现脱节 |
+| 修复 | 更新 `quickstart.md`，添加 `mkdir -p ~/.db_query` 和配置文件创建步骤 | 新增配置文件创建命令，支持 `OPENAI_API_ENDPOINT`、`OPENAI_MODEL`、`DEFAULT_LIMIT`、`DB_QUERY_DB_PATH`、`CORS_ORIGINS` 等配置项 |
+
+### Phase 6 自测 Bug 修复验证结果
+
+| 测试项 | 结果 | 说明 |
+|--------|------|------|
+| 后端错误消息英文化 | ✅ | 所有错误消息正确返回英文 |
+| NL to SQL 英文提示词 | ✅ | 英文系统提示词正常工作 |
+| API 缓存机制 | ✅ | GET 使用缓存，refresh 强制刷新 |
+| SQL 提取健壮性 | ✅ | 多行 SQL 正确提取 |
+| OpenAI 错误处理 | ✅ | 分别处理各异常类型 |
+| 配置文档同步 | ✅ | quickstart.md 与实现一致 |
+| 后端单元测试 | ✅ | 更新后通过 |
+| 前端单元测试 | ✅ | 更新后通过 |
+
+### Phase 6 最终总结
+
+| 维度 | 结果 |
+|------|------|
+| 自测发现 Bug | 6 个 |
+| Bug 修复率 | 100% (6/6) |
+| 测试通过率 | 100% |
+| 代码质量 | 生产就绪 |
+
+**Phase 6 自测阶段发现 6 个 Bug，全部修复完成，所有工作顺利交付。**
 
