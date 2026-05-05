@@ -18,11 +18,21 @@ cd backend
 # Install dependencies
 uv sync
 
-# Set environment variables
-export OPENAI_API_KEY="sk-..."
+# Create configuration file at ~/.db_query/env.properties
+mkdir -p ~/.db_query
+cat > ~/.db_query/env.properties << 'EOF'
+# OpenAI API Configuration
+OPENAI_API_KEY=sk-...
+OPENAI_API_ENDPOINT=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o
 
-# Configure default LIMIT (optional, defaults to 1000)
-export DEFAULT_LIMIT=1000
+# Query Configuration
+DEFAULT_LIMIT=1000
+
+# Optional Configuration
+# DB_QUERY_DB_PATH=~/.db_query/db_query.db
+# CORS_ORIGINS=*
+EOF
 
 # Run the server
 uv run uvicorn app.main:app --reload --port 8000
@@ -82,15 +92,18 @@ tailwindcss (v4, via @tailwindcss/vite plugin)
 5. Write a SQL query in the editor and click "执行"
 6. Or type a natural language question and click "生成 SQL"
 
-## Environment Variables
+## Configuration
+
+Configuration is stored in `~/.db_query/env.properties`:
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `OPENAI_API_KEY` | yes (for NL) | — | OpenAI API key |
-| `DEFAULT_LIMIT` | no | `1000` | Default LIMIT for queries without LIMIT |
-| `DB_QUERY_DB_PATH` | no | `~/.db_query/db_query.db` | SQLite database path |
+| `DEFAULT_LIMIT` | no | `1000` | Default LIMIT for queries without LIMIT clause |
+| `OPENAI_API_ENDPOINT` | no | `https://api.openai.com/v1` | OpenAI API endpoint |
 | `OPENAI_MODEL` | no | `gpt-4o` | OpenAI model for NL→SQL |
-| `CORS_ORIGINS` | no | `*` | Allowed CORS origins |
+| `DB_QUERY_DB_PATH` | no | `~/.db_query/db_query.db` | SQLite database path |
+| `CORS_ORIGINS` | no | `*` | Allowed CORS origins (comma-separated) |
 
 ## Running Tests
 

@@ -20,7 +20,7 @@ class ConnectionService:
     def _validate_url(url: str) -> tuple[bool, str]:
         """Validate PostgreSQL connection URL."""
         if not url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
-            return False, "仅支持 PostgreSQL 连接，URL 必须以 postgresql:// 或 postgresql+asyncpg:// 开头"
+            return False, "Only PostgreSQL connections are supported. URL must start with postgresql:// or postgresql+asyncpg://"
         return True, ""
 
     @staticmethod
@@ -41,10 +41,10 @@ class ConnectionService:
             return True, ""
         except asyncio.TimeoutError:
             logger.warning(f"Connection test timed out")
-            return False, "数据库连接超时，请检查网络或数据库状态"
+            return False, "Database connection timeout. Please check your network or database status."
         except Exception as e:
             logger.error(f"Connection test failed: {str(e)}")
-            return False, f"无法连接到数据库服务器：{str(e)}"
+            return False, f"Failed to connect to database server: {str(e)}"
         finally:
             if engine:
                 await engine.dispose()

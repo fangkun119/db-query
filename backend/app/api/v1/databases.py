@@ -38,12 +38,27 @@ async def add_database(name: str, request: CreateConnectionRequest) -> DatabaseS
 
 @router.get("/{name}", response_model=DatabaseDetailResponse)
 async def get_database(name: str) -> DatabaseDetailResponse:
-    """Get database details with fresh metadata."""
+    """Get database details with cached metadata."""
+    success, error_msg, response = await MetadataService.get_metadata_with_refresh(name, force_refresh=False)
+
+    if not success:
+        if "does not exist" in error_msg:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
+
+    return response
+
+
+@router.post("/{name}/refresh", response_model=DatabaseDetailResponse)
+async def refresh_database(name: str) -> DatabaseDetailResponse:
+    """Force refresh database metadata from the source."""
     success, error_msg, response = await MetadataService.get_metadata_with_refresh(name, force_refresh=True)
 
     if not success:
         if "does not exist" in error_msg:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
+        if "timeout" in error_msg.lower():
+            raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
     return response

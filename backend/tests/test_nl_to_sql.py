@@ -269,11 +269,11 @@ class TestBuildSystemPrompt:
 
         prompt = NLToSQLService._build_system_prompt(schema_ddl)
 
-        assert "你是一个专业的 PostgreSQL SQL 生成助手" in prompt
+        assert "professional PostgreSQL SQL generation assistant" in prompt
         assert schema_ddl in prompt
-        assert "只生成 SELECT 查询语句" in prompt
-        assert "不要添加 LIMIT 子句" in prompt
-        assert "使用 PostgreSQL 语法" in prompt
+        assert "Only generate SELECT" in prompt
+        assert "Do NOT add LIMIT" in prompt
+        assert "PostgreSQL syntax" in prompt
 
     def test_prompt_contains_requirements(self):
         """Test that prompt contains all requirements."""
@@ -283,7 +283,7 @@ class TestBuildSystemPrompt:
         # Check for key requirements
         assert "SELECT" in prompt
         assert "PostgreSQL" in prompt
-        assert "严格匹配" in prompt or "match" in prompt.lower()
+        assert "strictly match" in prompt or "match" in prompt.lower()
 
 
 class TestGenerateSQL:
@@ -341,18 +341,15 @@ class TestGenerateSQL:
 
     @pytest.mark.asyncio
     async def test_generate_sql_success_with_structured_output(self, mock_settings, sample_tables):
-        """Test successful SQL generation with structured output."""
+        """Test successful SQL generation with text completion."""
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.parsed = SQLGenerationResult(
-            sql="SELECT id, name FROM public.users WHERE email IS NOT NULL",
-            explanation="查询有邮箱的用户"
-        )
+        mock_response.choices[0].message.content = "SELECT id, name FROM public.users WHERE email IS NOT NULL"
 
         with patch("app.services.nl_to_sql.OpenAI") as mock_openai:
             mock_client = MagicMock()
             mock_openai.return_value = mock_client
-            mock_client.beta.chat.completions.parse.return_value = mock_response
+            mock_client.chat.completions.create.return_value = mock_response
 
             success, error_msg, result = await NLToSQLService.generate_sql(
                 question="查找所有有邮箱的用户",
@@ -365,17 +362,13 @@ class TestGenerateSQL:
             assert result is not None
             assert "SELECT" in result.sql
             assert "users" in result.sql
-            assert result.explanation == "查询有邮箱的用户"
 
     @pytest.mark.asyncio
     async def test_generate_sql_with_fallback_to_text(self, mock_settings, sample_tables):
-        """Test fallback to text completion when structured output fails."""
+        """Test SQL generation with text completion."""
         mock_client = MagicMock()
 
-        # First call to parse() raises exception
-        mock_client.beta.chat.completions.parse.side_effect = Exception("Parse error")
-
-        # Fallback to text completion
+        # Text completion returns SQL
         mock_text_response = MagicMock()
         mock_text_response.choices = [MagicMock()]
         mock_text_response.choices[0].message.content = "SELECT * FROM users"
@@ -401,9 +394,6 @@ class TestGenerateSQL:
         """Test failure when SQL cannot be extracted from text response."""
         mock_client = MagicMock()
 
-        # Parse fails
-        mock_client.beta.chat.completions.parse.side_effect = Exception("Parse error")
-
         # Text completion returns non-SQL text
         mock_text_response = MagicMock()
         mock_text_response.choices = [MagicMock()]
@@ -419,7 +409,7 @@ class TestGenerateSQL:
             )
 
             assert success is False
-            assert "无法从响应中提取 SQL" in error_msg or "extract" in error_msg.lower()
+            assert "Could not extract SQL" in error_msg or "extract" in error_msg.lower()
             assert result is None
 
     @pytest.mark.asyncio
@@ -427,26 +417,23 @@ class TestGenerateSQL:
         """Test SQL generation with validation failure."""
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.parsed = SQLGenerationResult(
-            sql="DELETE FROM users",  # Invalid: not a SELECT
-            explanation=None
-        )
+        mock_response.choices[0].message.content = "SELECT * FROM invalid_table"  # Valid SELECT but table doesn't exist
 
         with patch("app.services.nl_to_sql.OpenAI") as mock_openai, \
              patch("app.services.nl_to_sql.ValidatorService") as mock_validator:
             mock_client = MagicMock()
             mock_openai.return_value = mock_client
-            mock_client.beta.chat.completions.parse.return_value = mock_response
-            mock_validator.validate_for_nl_generated.return_value = (False, "Only SELECT queries are supported")
+            mock_client.chat.completions.create.return_value = mock_response
+            mock_validator.validate_for_nl_generated.return_value = (False, "Table 'invalid_table' does not exist")
 
             success, error_msg, result = await NLToSQLService.generate_sql(
-                question="删除所有用户",
+                question="从不存在的表查询",
                 tables=sample_tables,
                 settings=mock_settings
             )
 
             assert success is False
-            assert "validation failed" in error_msg.lower() or "验证失败" in error_msg
+            assert "validation failed" in error_msg.lower()
             assert result is None
 
 
@@ -455,11 +442,11 @@ class TestErrorMessageMapping:
 
     def test_authentication_error_message(self):
         """Test error message for authentication failure."""
-        assert "密钥" in NLToSQLService.ERROR_MESSAGES[AuthenticationError]
+        assert "invalid" in NLToSQLService.ERROR_MESSAGES[AuthenticationError].lower()
 
     def test_rate_limit_error_message(self):
         """Test error message for rate limiting."""
-        assert "频繁" in NLToSQLService.ERROR_MESSAGES[RateLimitError]
+        assert "requests" in NLToSQLService.ERROR_MESSAGES[RateLimitError].lower()
 
     def test_all_error_types_mapped(self):
         """Test that all error types have messages."""

@@ -68,7 +68,7 @@ PUT /api/v1/dbs/{name}
 - `504 Gateway Timeout` — Connection timeout (30s)
 
 ```json
-{ "detail": "无法连接到数据库服务器，请检查网络或数据库状态" }
+{ "detail": "Failed to connect to database server. Please check your network or database status" }
 ```
 
 ---
@@ -221,11 +221,11 @@ When LIMIT is auto-applied (`isTruncated: true`):
 - `502 Bad Gateway` — Database connection failure
 
 ```json
-{ "detail": "仅支持 SELECT 查询" }
+{ "detail": "Only SELECT queries are supported" }
 ```
 
 ```json
-{ "detail": "语法错误 (行 1, 列 15): Expected table name" }
+{ "detail": "Syntax error (line 1, column 15): Expected table name" }
 ```
 
 ---
@@ -262,7 +262,7 @@ POST /api/v1/dbs/{name}/query/natural
 - `502 Bad Gateway` — OpenAI API error
 
 ```json
-{ "detail": "OpenAI API 密钥无效，请检查配置" }
+{ "detail": "OpenAI API key is invalid. Please check configuration" }
 ```
 
 ---
@@ -273,7 +273,7 @@ All errors follow a consistent format:
 
 ```json
 {
-  "detail": "Human-readable error message in Chinese"
+  "detail": "Human-readable error message in English"
 }
 ```
 

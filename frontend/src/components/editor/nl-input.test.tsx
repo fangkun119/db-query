@@ -18,10 +18,10 @@ describe('NLInput', () => {
       expect(textarea).toBeInTheDocument()
     })
 
-    it('should render with Chinese placeholder', () => {
+    it('should render with language-neutral placeholder', () => {
       render(<NLInput onGenerate={mockOnGenerate} onExecute={mockOnExecute} />)
 
-      const textarea = screen.getByPlaceholderText(/Chinese or English/)
+      const textarea = screen.getByPlaceholderText(/Ask questions about your data/)
       expect(textarea).toBeInTheDocument()
     })
 
