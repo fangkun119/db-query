@@ -77,7 +77,8 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 - **FR-002**: System MUST detect and store the database type (PostgreSQL or MySQL) automatically from the connection URL scheme
 - **FR-003**: System MUST display the database type标识 (PostgreSQL or MySQL) for each database in the database list UI
 - **FR-004**: System MUST support deletion of MySQL database connections, including cleanup of all associated metadata from the local storage
-- **FR-005**: System MUST extract and store metadata from MySQL databases including tables, views, columns, data types, and constraints
+- **FR-005**: System MUST extract and store metadata from MySQL databases including tables, views, columns, data types, and constraints (both TABLE and VIEW object types are included in schema extraction)
+- **FR-005a**: System MUST provide a manual refresh option for users to update metadata when database schemas change
 - **FR-006**: System MUST query MySQL `information_schema` system tables to obtain MySQL database metadata
 - **FR-007**: System MUST execute SQL queries directly on MySQL databases without performing SQL syntax validation or type checking
 - **FR-008**: System MUST display MySQL database error messages directly and accurately to users when queries fail
@@ -104,9 +105,19 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 - **SC-002**: MySQL database metadata is extracted and displayed with 100% accuracy for all accessible tables and columns when a database is added or refreshed
 - **SC-003**: Users can execute MySQL SELECT queries and see results formatted in a table within 3 seconds for queries returning up to 100 rows
 - **SC-004**: Natural language queries for MySQL databases generate syntactically correct MySQL SQL in at least 90% of common query patterns including simple filtering, sorting, top-N queries, and basic joins
-- **SC-005**: The system supports at least 10 concurrent database connections (mix of PostgreSQL and MySQL) without performance degradation or connection errors
+- **SC-005**: The system supports storing at least 10 database connection configurations (mix of PostgreSQL and MySQL) with no enforced limit on quantity; actual database queries use transient connections (established per query, released immediately) via NullPool pattern, avoiding long-term connection pool occupation
 - **SC-006**: Error messages from failed MySQL queries are displayed clearly and accurately to help users diagnose issues, preserving the original MySQL error format
 - **SC-007**: Users can successfully switch between querying PostgreSQL and MySQL databases in the same session within 2 seconds without page refresh or manual reconnection
+
+## Clarifications
+
+### Session 2025-05-05
+
+- Q: How should database passwords be stored in the local SQLite database? → A: Store plaintext (as-is in URL)
+- Q: SC-005 "10 concurrent connections" - per user or system-wide? → A: Connections are SQLite-stored configuration records only, not real DB connections; uses NullPool (connect per query, release immediately); unlimited quantity supported
+- Q: Which Python MySQL client library? → A: Pure Python (pymysql) for portability and zero native dependencies
+- Q: When should database metadata be refreshed? → A: Manual refresh only (user triggered via button)
+- Q: Should metadata extraction include database VIEWs? → A: Yes, include views alongside tables
 
 ## Assumptions
 
@@ -114,7 +125,7 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 - Users have valid MySQL credentials and necessary permissions (SELECT, SHOW DATABASES, access to information_schema) to connect to their MySQL databases
 - MySQL databases are accessible from the application server with proper network connectivity, firewall rules, and any required SSL certificates
 - MySQL version is 5.7 or higher; older versions (5.5, 5.6) may have limited compatibility with metadata extraction
-- The application can install and use the appropriate MySQL client library (e.g., `pymysql` or `mysqlclient` for Python)
+- The application uses `pymysql` as the MySQL client library for its pure Python implementation, requiring no system-level compilation or native dependencies, ensuring consistent behavior across platforms
 - Users understand basic database concepts and can provide connection details including host, port, username, password, and database name
 - MySQL-specific SQL syntax differences from PostgreSQL (string escaping, identifier quoting, function names, LIMIT syntax) are handled at query generation time, not at query execution time
 - SQLite local storage continues to work for storing database connections and metadata for both PostgreSQL and MySQL databases
@@ -122,3 +133,6 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 - MySQL metadata can be obtained using standard `information_schema` queries which are available in MySQL 5.0 and later
 - The system does not need to automatically detect database type from connection attempts - the URL scheme (`mysql://` vs `postgresql://` or `postgres://`) is sufficient
 - Users understand that MySQL and PostgreSQL have different SQL dialects and that SQL written for one may not work on the other
+- Database passwords are stored in plaintext within connection URLs in the local SQLite storage; this is acceptable for demo/prototype phase where the application runs on trusted user devices
+- Database connections use a NullPool pattern: each query establishes a transient connection to the database and releases it immediately after the query completes, avoiding long-term connection pool occupation and supporting unlimited stored connection configurations
+- Metadata refresh is manual only: users trigger refresh when they know the database schema has changed; no automatic polling or background refresh to avoid complexity and performance overhead
