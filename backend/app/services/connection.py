@@ -17,20 +17,28 @@ class ConnectionService:
     """Service for managing database connections."""
 
     @staticmethod
+    def _detect_db_type(url: str) -> str:
+        """Detect database type from URL scheme."""
+        url_lower = url.lower()
+        if url_lower.startswith("mysql://") or url_lower.startswith("mysql+"):
+            return "mysql"
+        if url_lower.startswith("postgresql://") or url_lower.startswith("postgresql+"):
+            return "postgresql"
+        return "postgresql"  # Default fallback
+
+    @staticmethod
     def _validate_url(url: str) -> tuple[bool, str]:
-        """Validate PostgreSQL connection URL."""
-        if not url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
-            return False, "Only PostgreSQL connections are supported. URL must start with postgresql:// or postgresql+asyncpg://"
+        """Validate database connection URL."""
+        url_lower = url.lower()
+        if not (url_lower.startswith("postgresql://") or url_lower.startswith("postgresql+asyncpg://") or
+                url_lower.startswith("mysql://") or url_lower.startswith("mysql+aiomysql://")):
+            return False, "Only PostgreSQL and MySQL connections are supported. URL must start with postgresql:// or mysql://"
         return True, ""
 
     @staticmethod
     async def _test_connection(url: str) -> tuple[bool, str]:
         """Test database connection with timeout."""
-        # Ensure URL uses asyncpg driver
-        if url.startswith("postgresql://"):
-            test_url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        else:
-            test_url = url
+        test_url = ConnectionService.get_connection_url(url)
 
         engine = None
         try:
@@ -80,10 +88,11 @@ class ConnectionService:
                 return False, f"Connection name '{name}' already exists", None
 
             # Create new connection
+            detected_db_type = ConnectionService._detect_db_type(request.url)
             conn = DatabaseConnection(
                 name=name,
                 url=request.url,
-                db_type="postgresql",
+                db_type=detected_db_type,
                 status="active",
                 created_at=datetime.now(timezone.utc)
             )
@@ -174,7 +183,9 @@ class ConnectionService:
 
     @staticmethod
     def get_connection_url(url: str) -> str:
-        """Convert URL to asyncpg format for queries."""
+        """Convert URL to async format for queries."""
         if url.startswith("postgresql://"):
             return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if url.startswith("mysql://"):
+            return url.replace("mysql://", "mysql+aiomysql://", 1)
         return url

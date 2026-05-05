@@ -18,8 +18,83 @@ logger = logging.getLogger(__name__)
 class MetadataService:
     """Service for fetching and managing database metadata."""
 
-    # System schemas to exclude
-    EXCLUDED_SCHEMAS = {"pg_catalog", "information_schema"}
+    # System schemas to exclude by database type
+    EXCLUDED_SCHEMAS = {
+        "postgresql": {"pg_catalog", "information_schema"},
+        "mysql": {"mysql", "information_schema", "performance_schema", "sys"}
+    }
+
+    @staticmethod
+    def _get_metadata_query(db_type: str) -> str:
+        """Get metadata query for specific database type."""
+        if db_type == "mysql":
+            return """
+                SELECT
+                    t.table_schema,
+                    t.table_name,
+                    t.table_type,
+                    c.column_name,
+                    c.data_type,
+                    c.is_nullable,
+                    c.column_default,
+                    c.ordinal_position,
+                    COALESCE(kcu.column_name IS NOT NULL, false) as is_primary_key,
+                    NULL as table_comment,
+                    NULL as column_comment
+                FROM information_schema.tables t
+                LEFT JOIN information_schema.columns c
+                    ON t.table_schema = c.table_schema
+                    AND t.table_name = c.table_name
+                LEFT JOIN information_schema.table_constraints tc
+                    ON tc.table_schema = t.table_schema
+                    AND tc.table_name = t.table_name
+                    AND tc.constraint_type = 'PRIMARY KEY'
+                LEFT JOIN information_schema.key_column_usage kcu
+                    ON kcu.table_schema = t.table_schema
+                    AND kcu.table_name = t.table_name
+                    AND kcu.column_name = c.column_name
+                    AND kcu.constraint_name = tc.constraint_name
+                WHERE t.table_schema NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
+                ORDER BY t.table_schema, t.table_name, c.ordinal_position
+            """
+        else:  # postgresql
+            return """
+                SELECT
+                    t.table_schema,
+                    t.table_name,
+                    t.table_type,
+                    c.column_name,
+                    c.data_type,
+                    c.is_nullable,
+                    c.column_default,
+                    c.ordinal_position,
+                    COALESCE(kcu.column_name IS NOT NULL, false) as is_primary_key,
+                    pgd.description as table_comment,
+                    pgd_col.description as column_comment
+                FROM information_schema.tables t
+                LEFT JOIN information_schema.columns c
+                    ON t.table_schema = c.table_schema
+                    AND t.table_name = c.table_name
+                LEFT JOIN information_schema.table_constraints tc
+                    ON tc.table_schema = t.table_schema
+                    AND tc.table_name = t.table_name
+                    AND tc.constraint_type = 'PRIMARY KEY'
+                LEFT JOIN information_schema.key_column_usage kcu
+                    ON kcu.table_schema = t.table_schema
+                    AND kcu.table_name = t.table_name
+                    AND kcu.column_name = c.column_name
+                    AND kcu.constraint_name = tc.constraint_name
+                LEFT JOIN pg_class pgc
+                    ON pgc.relname = t.table_name
+                LEFT JOIN pg_namespace pgn
+                    ON pgn.oid = pgc.relnamespace AND pgn.nspname = t.table_schema
+                LEFT JOIN pg_description pgd
+                    ON pgd.objoid = pgc.oid AND pgd.objsubid = 0
+                LEFT JOIN pg_description pgd_col
+                    ON pgd_col.objoid = pgc.oid AND pgd_col.objsubid = c.ordinal_position
+                WHERE t.table_schema NOT IN ('pg_catalog', 'information_schema')
+                ORDER BY t.table_schema, t.table_name, c.ordinal_position
+            """
 
     @staticmethod
     async def fetch_metadata(url: str) -> tuple[bool, str, Optional[list[TableMetadata]]]:
@@ -32,49 +107,18 @@ class MetadataService:
             tuple: (success, error_message, metadata_list)
         """
         logger.info("Fetching database metadata")
+
+        # Detect database type and get async URL
+        db_type = ConnectionService._detect_db_type(url)
         async_url = ConnectionService.get_connection_url(url)
+
         engine = None
         try:
             engine = create_async_engine(async_url, poolclass=NullPool)
             async with engine.connect() as conn:
-                # Query for tables and views with comments
-                query = text("""
-                    SELECT
-                        t.table_schema,
-                        t.table_name,
-                        t.table_type,
-                        c.column_name,
-                        c.data_type,
-                        c.is_nullable,
-                        c.column_default,
-                        c.ordinal_position,
-                        COALESCE(kcu.column_name IS NOT NULL, false) as is_primary_key,
-                        pgd.description as table_comment,
-                        pgd_col.description as column_comment
-                    FROM information_schema.tables t
-                    LEFT JOIN information_schema.columns c
-                        ON t.table_schema = c.table_schema
-                        AND t.table_name = c.table_name
-                    LEFT JOIN information_schema.table_constraints tc
-                        ON tc.table_schema = t.table_schema
-                        AND tc.table_name = t.table_name
-                        AND tc.constraint_type = 'PRIMARY KEY'
-                    LEFT JOIN information_schema.key_column_usage kcu
-                        ON kcu.table_schema = t.table_schema
-                        AND kcu.table_name = t.table_name
-                        AND kcu.column_name = c.column_name
-                        AND kcu.constraint_name = tc.constraint_name
-                    LEFT JOIN pg_class pgc
-                        ON pgc.relname = t.table_name
-                    LEFT JOIN pg_namespace pgn
-                        ON pgn.oid = pgc.relnamespace AND pgn.nspname = t.table_schema
-                    LEFT JOIN pg_description pgd
-                        ON pgd.objoid = pgc.oid AND pgd.objsubid = 0
-                    LEFT JOIN pg_description pgd_col
-                        ON pgd_col.objoid = pgc.oid AND pgd_col.objsubid = c.ordinal_position
-                    WHERE t.table_schema NOT IN ('pg_catalog', 'information_schema')
-                    ORDER BY t.table_schema, t.table_name, c.ordinal_position
-                """)
+                # Get database-specific query
+                query_text = MetadataService._get_metadata_query(db_type)
+                query = text(query_text)
 
                 result = await asyncio.wait_for(conn.execute(query), timeout=30)
                 rows = result.fetchall()

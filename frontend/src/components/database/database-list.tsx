@@ -24,6 +24,11 @@ const statusConfig: Record<string, { color: string; text: string }> = {
   connecting: { color: 'processing', text: 'Connecting' },
 };
 
+const dbTypeConfig: Record<string, { color: string; text: string }> = {
+  postgresql: { color: '#1890ff', text: 'POSTGRESQL' },
+  mysql: { color: '#fa8c16', text: 'MYSQL' },
+};
+
 export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedName, onDelete, onClick }) => {
   const handleDelete = (name: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -34,6 +39,7 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedN
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px' }}>
       {databases.map((db) => {
         const statusInfo = statusConfig[db.status];
+        const dbTypeInfo = dbTypeConfig[db.dbType] || { color: 'default', text: db.dbType.toUpperCase() };
         const lastRefreshed = db.lastRefreshedAt
           ? dayjs(db.lastRefreshedAt).fromNow()
           : 'Never';
@@ -64,13 +70,14 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedN
             className="database-list-item"
           >
             <div style={{ flex: 1, minWidth: 0 }}>
-              {/* First row: Icon + Database Name + Delete Button */}
+              {/* First row: Icon + Database Name + Status Badge + DB Type Badge + Delete Button */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <Space>
                   <DatabaseOutlined style={{ fontSize: '16px', color: '#333333' }} />
                   <Text strong style={{ fontSize: '14px', fontWeight: 600, fontFamily: 'sans-serif', color: '#333333' }}>
                     {db.name.toUpperCase()}
                   </Text>
+                  <Tag color={dbTypeInfo.color}>{dbTypeInfo.text}</Tag>
                   {statusInfo && (
                     <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
                   )}
@@ -97,9 +104,6 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedN
               </div>
               {/* Second row: Info */}
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                <Text type="secondary" style={{ fontSize: '14px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
-                  {db.dbType}
-                </Text>
                 <Text type="secondary" style={{ fontSize: '14px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
                   {db.tableCount} tables, {db.viewCount} views
                 </Text>

@@ -60,12 +60,17 @@ mysql -u root -p < test/db_scripts/mysql/todo_db.sql
 
 ## API Testing
 
-**REST Client file**: [test/rest/postgres.rest](test/rest/postgres.rest) (30+ cases: health, dbs, query, errors)
+**REST Client files**:
+- [test/rest/postgres.rest](test/rest/postgres.rest) (40+ cases: health, dbs, query, errors)
+- [test/rest/mysql.rest](test/rest/mysql.rest) (54+ cases: health, dbs, query, MySQL-specific syntax, NL to SQL)
 
 | Prerequisite | Command |
 |--------------|---------|
 | VSCode REST Client extension | Install from marketplace |
 | Backend server | `make backend-dev` |
-| Test database | `make test-db` |
+| PostgreSQL test database | `psql -U postgres -f test/db_scripts/postgres/interview_db.sql` |
+| MySQL test database | `mysql -u root -p < test/db_scripts/mysql/todo_db.sql` |
 
 **Usage**: Open `.rest` file → Click "Send Request" above each test
+
+**Supported Database Types**: PostgreSQL (`postgresql://`) and MySQL (`mysql://`)

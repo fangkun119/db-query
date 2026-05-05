@@ -25,18 +25,16 @@ class QueryService:
         """Execute a SQL query on the database.
 
         Args:
-            connection_url: PostgreSQL connection URL
+            connection_url: Database connection URL (PostgreSQL or MySQL)
             request: Query request with SQL
             default_limit: Default LIMIT for truncation detection
 
         Returns:
             Tuple of (QueryResultResponse or None, error_message)
         """
-        # Convert to asyncpg URL if needed
-        if connection_url.startswith("postgresql://"):
-            query_url = connection_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        else:
-            query_url = connection_url
+        # Convert to async URL if needed
+        from app.services.connection import ConnectionService
+        query_url = ConnectionService.get_connection_url(connection_url)
 
         # Validate and enrich SQL
         try:
@@ -92,8 +90,16 @@ class QueryService:
                 return query_result, None
 
         except Exception as e:
-            logger.error(f"Query execution failed: {str(e)}")
-            return None, f"Query execution failed: {str(e)}"
+            error_str = str(e)
+            logger.error(f"Query execution failed: {error_str}")
+
+            # For MySQL, preserve the raw error message format
+            # MySQL errors typically contain useful error codes
+            if "mysql" in query_url.lower():
+                return None, error_str
+
+            # For PostgreSQL and other databases, format the error
+            return None, f"Query execution failed: {error_str}"
 
         finally:
             if engine:

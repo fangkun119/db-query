@@ -16,12 +16,128 @@ logger = logging.getLogger(__name__)
 class SQLGenerationResult(BaseModel):
     """Structured output for SQL generation."""
 
-    sql: str = Field(description="Generated PostgreSQL SELECT query")
+    sql: str = Field(description="Generated SELECT query")
     explanation: Optional[str] = Field(default=None, description="Brief explanation of the generated SQL")
 
 
 class NLToSQLService:
     """Service for converting natural language questions to SQL queries."""
+
+    # Database-specific system prompts
+    SYSTEM_PROMPTS = {
+        "postgresql": """You are a professional PostgreSQL SQL generation assistant. Generate SELECT queries based on user's natural language questions.
+
+Database schema:
+{schema_ddl}
+
+Requirements:
+1. Only generate SELECT query statements
+2. Do NOT add LIMIT clause (system will auto-add)
+3. Use PostgreSQL syntax
+4. Table and column names must strictly match the schema above
+5. **Pay close attention to column comments** - they contain:
+   - Business context (e.g., "工作年限" = years of experience)
+   - Foreign key relationships (e.g., "关联candidates表" means refers to candidates table)
+   - Enum value explanations (e.g., "applied, screening, interviewing, offered, hired")
+6. Use relationship hints in comments to construct proper JOINs
+7. Think step-by-step before writing SQL:
+   - Identify which tables are needed
+   - Identify relationships between tables (check column comments for "关联" or "refers to")
+   - Identify WHERE conditions
+   - Then write the final query
+8. If the question is ambiguous or schema is insufficient:
+   - Still generate best-effort SQL
+   - Use explanation field to clarify assumptions made (e.g., "Assuming 'senior' refers to position title")
+9. Return SQL without Markdown formatting (no ```sql markers)
+
+Examples:
+
+Q: Show all candidates
+A: SELECT * FROM candidates;
+
+Q: Show candidates who applied for positions with "Senior" in the title
+A: SELECT DISTINCT c.* FROM candidates c
+JOIN candidate_position_applications cpa ON c.id = cpa.candidate_id
+JOIN positions p ON cpa.position_id = p.id
+WHERE p.title LIKE '%Senior%';
+
+Q: Count applications per position, ordered by count
+A: SELECT p.title, COUNT(cpa.candidate_id) as application_count
+FROM positions p
+LEFT JOIN candidate_position_applications cpa ON p.id = cpa.position_id
+GROUP BY p.id, p.title
+ORDER BY application_count DESC;
+
+Q: Show candidates with more than 5 years of experience
+A: SELECT * FROM candidates WHERE years_of_experience > 5;
+
+Q: 显示每个职位的应聘人数
+A: SELECT p.title, COUNT(cpa.candidate_id) as application_count
+FROM positions p
+LEFT JOIN candidate_position_applications cpa ON p.id = cpa.position_id
+GROUP BY p.id, p.title;
+
+Now answer the user's question.
+""",
+        "mysql": """You are a professional MySQL SQL generation assistant. Generate SELECT queries based on user's natural language questions.
+
+Database schema:
+{schema_ddl}
+
+Requirements:
+1. Only generate SELECT query statements
+2. Do NOT add LIMIT clause (system will auto-add)
+3. Use MySQL syntax:
+   - Use CONCAT() for string concatenation (not ||)
+   - Use LIKE for pattern matching
+   - Use backticks \` for identifiers if needed (table/column names with spaces or keywords)
+   - Use DATE() or DATE_FORMAT() for date operations
+4. Table and column names must strictly match the schema above
+5. **Pay close attention to column comments** - they contain:
+   - Business context (e.g., "工作年限" = years of experience)
+   - Foreign key relationships (e.g., "关联candidates表" means refers to candidates table)
+   - Enum value explanations (e.g., "applied, screening, interviewing, offered, hired")
+6. Use relationship hints in comments to construct proper JOINs
+7. Think step-by-step before writing SQL:
+   - Identify which tables are needed
+   - Identify relationships between tables (check column comments for "关联" or "refers to")
+   - Identify WHERE conditions
+   - Then write the final query
+8. If the question is ambiguous or schema is insufficient:
+   - Still generate best-effort SQL
+   - Use explanation field to clarify assumptions made (e.g., "Assuming 'senior' refers to position title")
+9. Return SQL without Markdown formatting (no ```sql markers)
+
+Examples:
+
+Q: Show all users
+A: SELECT * FROM users;
+
+Q: Show users who applied for positions with "Senior" in the title
+A: SELECT DISTINCT u.* FROM users u
+JOIN applications a ON u.id = a.user_id
+JOIN positions p ON a.position_id = p.id
+WHERE p.title LIKE '%Senior%';
+
+Q: Count applications per position, ordered by count
+A: SELECT p.title, COUNT(a.user_id) as application_count
+FROM positions p
+LEFT JOIN applications a ON p.id = a.position_id
+GROUP BY p.id, p.title
+ORDER BY application_count DESC;
+
+Q: Show users created after a specific date
+A: SELECT * FROM users WHERE DATE(created_at) > '2024-01-01';
+
+Q: 显示每个职位的应聘人数
+A: SELECT p.title, COUNT(a.user_id) as application_count
+FROM positions p
+LEFT JOIN applications a ON p.id = a.position_id
+GROUP BY p.id, p.title;
+
+Now answer the user's question.
+"""
+    }
 
     # Error mappings from OpenAI SDK exceptions to user messages
     ERROR_MESSAGES = {
@@ -147,75 +263,25 @@ class NLToSQLService:
         return result
 
     @staticmethod
-    def _build_system_prompt(schema_ddl: str) -> str:
+    def _build_system_prompt(schema_ddl: str, db_type: str = "postgresql") -> str:
         """Build system prompt with schema context.
 
         Args:
             schema_ddl: DDL string for database schema
+            db_type: Database type (postgresql or mysql)
 
         Returns:
             System prompt string
         """
-        return f"""You are a professional PostgreSQL SQL generation assistant. Generate SELECT queries based on user's natural language questions.
-
-Database schema:
-{schema_ddl}
-
-Requirements:
-1. Only generate SELECT query statements
-2. Do NOT add LIMIT clause (system will auto-add)
-3. Use PostgreSQL syntax
-4. Table and column names must strictly match the schema above
-5. **Pay close attention to column comments** - they contain:
-   - Business context (e.g., "工作年限" = years of experience)
-   - Foreign key relationships (e.g., "关联candidates表" means refers to candidates table)
-   - Enum value explanations (e.g., "applied, screening, interviewing, offered, hired")
-6. Use relationship hints in comments to construct proper JOINs
-7. Think step-by-step before writing SQL:
-   - Identify which tables are needed
-   - Identify relationships between tables (check column comments for "关联" or "refers to")
-   - Identify WHERE conditions
-   - Then write the final query
-8. If the question is ambiguous or schema is insufficient:
-   - Still generate best-effort SQL
-   - Use explanation field to clarify assumptions made (e.g., "Assuming 'senior' refers to position title")
-9. Return SQL without Markdown formatting (no ```sql markers)
-
-Examples:
-
-Q: Show all candidates
-A: SELECT * FROM candidates;
-
-Q: Show candidates who applied for positions with "Senior" in the title
-A: SELECT DISTINCT c.* FROM candidates c
-JOIN candidate_position_applications cpa ON c.id = cpa.candidate_id
-JOIN positions p ON cpa.position_id = p.id
-WHERE p.title LIKE '%Senior%';
-
-Q: Count applications per position, ordered by count
-A: SELECT p.title, COUNT(cpa.candidate_id) as application_count
-FROM positions p
-LEFT JOIN candidate_position_applications cpa ON p.id = cpa.position_id
-GROUP BY p.id, p.title
-ORDER BY application_count DESC;
-
-Q: Show candidates with more than 5 years of experience
-A: SELECT * FROM candidates WHERE years_of_experience > 5;
-
-Q: 显示每个职位的应聘人数
-A: SELECT p.title, COUNT(cpa.candidate_id) as application_count
-FROM positions p
-LEFT JOIN candidate_position_applications cpa ON p.id = cpa.position_id
-GROUP BY p.id, p.title;
-
-Now answer the user's question.
-"""
+        prompt_template = NLToSQLService.SYSTEM_PROMPTS.get(db_type, NLToSQLService.SYSTEM_PROMPTS["postgresql"])
+        return prompt_template.format(schema_ddl=schema_ddl)
 
     @staticmethod
     async def generate_sql(
         question: str,
         tables: list[TableMetadata],
-        settings: Settings
+        settings: Settings,
+        db_type: str = "postgresql"
     ) -> tuple[bool, str, Optional[SQLGenerationResult]]:
         """Generate SQL from natural language question.
 
@@ -223,15 +289,16 @@ Now answer the user's question.
             question: Natural language question in Chinese
             tables: List of table metadata for context
             settings: Application settings with API configuration
+            db_type: Database type (postgresql or mysql)
 
         Returns:
             Tuple of (success, error_message, result)
         """
-        logger.info(f"Generating SQL for question: {question[:50]}...")
+        logger.info(f"Generating SQL for question: {question[:50]}... (db_type: {db_type})")
 
         # Build schema context
         schema_ddl = NLToSQLService._build_schema_ddl(tables)
-        system_prompt = NLToSQLService._build_system_prompt(schema_ddl)
+        system_prompt = NLToSQLService._build_system_prompt(schema_ddl, db_type)
 
         # Initialize OpenAI client with base_url for custom endpoints
         client = OpenAI(

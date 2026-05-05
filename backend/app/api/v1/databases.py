@@ -125,6 +125,11 @@ async def natural_query(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
 
+    # Get database connection for db_type
+    connection = await ConnectionService.get_connection(name)
+    if not connection:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database connection does not exist")
+
     # Convert TableMetadataResponse to TableMetadata objects
     tables = [
         TableMetadata(
@@ -152,7 +157,8 @@ async def natural_query(
     success, error_msg, result = await NLToSQLService.generate_sql(
         question=request.prompt,
         tables=tables,
-        settings=settings
+        settings=settings,
+        db_type=connection.db_type
     )
 
     if not success:

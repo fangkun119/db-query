@@ -17,14 +17,24 @@ class TestValidateUrl:
         assert ok is True
         assert msg == ""
 
-    def test_invalid_mysql_url(self):
+    def test_valid_mysql_url(self):
         ok, msg = ConnectionService._validate_url("mysql://user:pass@localhost/db")
-        assert ok is False
-        assert "PostgreSQL" in msg
+        assert ok is True
+        assert msg == ""
+
+    def test_valid_mysql_aiomysql_url(self):
+        ok, msg = ConnectionService._validate_url("mysql+aiomysql://user:pass@localhost/db")
+        assert ok is True
+        assert msg == ""
 
     def test_invalid_empty_url(self):
         ok, msg = ConnectionService._validate_url("")
         assert ok is False
+
+    def test_invalid_url_scheme(self):
+        ok, msg = ConnectionService._validate_url("mongodb://user:pass@localhost/db")
+        assert ok is False
+        assert "Only PostgreSQL and MySQL" in msg
 
 
 class TestGetConnectionUrl:
@@ -35,6 +45,14 @@ class TestGetConnectionUrl:
     def test_keeps_asyncpg_prefix(self):
         result = ConnectionService.get_connection_url("postgresql+asyncpg://user@localhost/db")
         assert result == "postgresql+asyncpg://user@localhost/db"
+
+    def test_converts_mysql_prefix(self):
+        result = ConnectionService.get_connection_url("mysql://user@localhost/db")
+        assert result == "mysql+aiomysql://user@localhost/db"
+
+    def test_keeps_aiomysql_prefix(self):
+        result = ConnectionService.get_connection_url("mysql+aiomysql://user@localhost/db")
+        assert result == "mysql+aiomysql://user@localhost/db"
 
 
 class TestAddConnection:
@@ -56,10 +74,10 @@ class TestAddConnection:
     async def test_add_connection_invalid_url(self, async_session):
         success, error_msg, response = await ConnectionService.add_connection(
             "mydb",
-            CreateConnectionRequest(url="mysql://localhost/db")
+            CreateConnectionRequest(url="mongodb://localhost/db")
         )
         assert success is False
-        assert "PostgreSQL" in error_msg
+        assert "Only PostgreSQL and MySQL" in error_msg
         assert response is None
 
     @pytest.mark.asyncio

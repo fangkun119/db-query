@@ -52,73 +52,73 @@ This phase combines:
 
 #### Connection Management (US1)
 
-- [ ] T006 [US1] Implement `_detect_db_type()` method in `backend/app/services/connection.py` to parse URL scheme and return "postgresql" or "mysql"
-- [ ] T007 [US1] Update `_validate_url()` in `backend/app/services/connection.py` to accept both `postgresql://` and `mysql://` URL schemes
-- [ ] T008 [US1] Update `add_connection()` in `backend/app/services/connection.py` to extract and store `db_type` from URL when adding database
-- [ ] T009 [US1] Update `get_connection_url()` in `backend/app/services/connection.py` to transform MySQL URLs to `mysql+aiomysql://` async format
-- [ ] T010 [US1] Add `db_type` field to `DatabaseConnection` model in `backend/app/db/sqlite.py`
+- [X] T006 [US1] Implement `_detect_db_type()` method in `backend/app/services/connection.py` to parse URL scheme and return "postgresql" or "mysql"
+- [X] T007 [US1] Update `_validate_url()` in `backend/app/services/connection.py` to accept both `postgresql://` and `mysql://` URL schemes
+- [X] T008 [US1] Update `add_connection()` in `backend/app/services/connection.py` to extract and store `db_type` from URL when adding database
+- [X] T009 [US1] Update `get_connection_url()` in `backend/app/services/connection.py` to transform MySQL URLs to `mysql+aiomysql://` async format
+- [X] T010 [US1] Add `db_type` field to `DatabaseConnection` model in `backend/app/db/sqlite.py`
 
 #### Metadata Extraction (US1)
 
-- [ ] T011 [US1] Add `EXCLUDED_SCHEMAS` dictionary in `backend/app/services/metadata.py` with MySQL system schemas ("mysql", "information_schema", "performance_schema", "sys")
-- [ ] T012 [US1] Create `_get_metadata_query()` method in `backend/app/services/metadata.py` that returns MySQL-specific metadata query
-- [ ] T013 [US1] Update `fetch_metadata()` in `backend/app/services/metadata.py` to call `_get_metadata_query(db_type)` with detected database type
-- [ ] T014 [US1] Update `fetch_metadata()` in `backend/app/services/metadata.py` to use `async_url` connection helper for MySQL
+- [X] T011 [US1] Add `EXCLUDED_SCHEMAS` dictionary in `backend/app/services/metadata.py` with MySQL system schemas ("mysql", "information_schema", "performance_schema", "sys")
+- [X] T012 [US1] Create `_get_metadata_query()` method in `backend/app/services/metadata.py` that returns MySQL-specific metadata query
+- [X] T013 [US1] Update `fetch_metadata()` in `backend/app/services/metadata.py` to call `_get_metadata_query(db_type)` with detected database type
+- [X] T014 [US1] Update `fetch_metadata()` in `backend/app/services/metadata.py` to use `async_url` connection helper for MySQL
 
 #### Query Execution (US2)
 
-- [ ] T015 [US2] Update query execution in `backend/app/api/v1/databases.py` to route to MySQL or PostgreSQL based on stored `db_type`
-- [ ] T016 [US2] Verify `add_limit_clause()` in `backend/app/services/query.py` works with MySQL (LIMIT syntax is identical, should already work)
-- [ ] T017 [US2] Add MySQL error message handling in query execution to preserve raw MySQL error format
-- [ ] T018 [US2] Test query execution with MySQL-specific syntax (CONCAT, LIKE, backtick identifiers)
+- [X] T015 [US2] Update query execution in `backend/app/api/v1/databases.py` to route to MySQL or PostgreSQL based on stored `db_type`
+- [X] T016 [US2] Verify `add_limit_clause()` in `backend/app/services/query.py` works with MySQL (LIMIT syntax is identical, should already work)
+- [X] T017 [US2] Add MySQL error message handling in query execution to preserve raw MySQL error format
+- [X] T018 [US2] Test query execution with MySQL-specific syntax (CONCAT, LIKE, backtick identifiers)
 
 #### Natural Language to SQL (US3)
 
-- [ ] T019 [US3] Create `SYSTEM_PROMPTS` dictionary in `backend/app/services/nl_to_sql.py` with PostgreSQL and MySQL-specific prompts
-- [ ] T020 [US3] Update `_get_system_prompt()` method in `backend/app/services/nl_to_sql.py` to return database-type-specific prompt
-- [ ] T021 [US3] Update `generate_sql()` in `backend/app/services/nl_to_sql.py` to pass `db_type` to LLM prompt generation
-- [ ] T022 [US3] Test NL to SQL generation with MySQL to verify CONCAT, LIKE, and date functions are generated correctly
+- [X] T019 [US3] Create `SYSTEM_PROMPTS` dictionary in `backend/app/services/nl_to_sql.py` with PostgreSQL and MySQL-specific prompts
+- [X] T020 [US3] Update `_get_system_prompt()` method in `backend/app/services/nl_to_sql.py` to return database-type-specific prompt
+- [X] T021 [US3] Update `generate_sql()` in `backend/app/services/nl_to_sql.py` to pass `db_type` to LLM prompt generation
+- [X] T022 [US3] Test NL to SQL generation with MySQL to verify CONCAT, LIKE, and date functions are generated correctly
 
 #### API Response Models (US1)
 
-- [ ] T023 [US1] Add `db_type` field to `DatabaseSummaryResponse` model in `backend/app/models/database.py`
-- [ ] T024 [US1] Add `db_type` field to `DatabaseDetailResponse` model in `backend/app/models/database.py`
-- [ ] T025 [US1] Verify API responses return `dbType` field in CamelCase for frontend compatibility
+- [X] T023 [US1] Add `db_type` field to `DatabaseSummaryResponse` model in `backend/app/models/database.py`
+- [X] T024 [US1] Add `db_type` field to `DatabaseDetailResponse` model in `backend/app/models/database.py`
+- [X] T025 [US1] Verify API responses return `dbType` field in CamelCase for frontend compatibility
 
 ### Frontend Tasks
 
 #### UI Components (US1)
 
-- [ ] T026 [P] [US1] Add TypeScript `DatabaseType` type to `frontend/src/types/database.ts`: `type DatabaseType = "postgresql" | "mysql"`
-- [ ] T027 [P] [US1] Update `Database` interface in `frontend/src/types/database.ts` to include `dbType: DatabaseType` field
-- [ ] T028 [P] [US1] Update `DatabaseList` component in `frontend/src/components/DatabaseList.tsx` to display database type badge
-- [ ] T029 [US1] Style MySQL badge with orange color (`#fa8c16`) and PostgreSQL badge with blue color (`#1890ff`)
+- [X] T026 [P] [US1] Add TypeScript `DatabaseType` type to `frontend/src/types/database.ts`: `type DatabaseType = "postgresql" | "mysql"`
+- [X] T027 [P] [US1] Update `Database` interface in `frontend/src/types/database.ts` to include `dbType: DatabaseType` field
+- [X] T028 [P] [US1] Update `DatabaseList` component in `frontend/src/components/DatabaseList.tsx` to display database type badge
+- [X] T029 [US1] Style MySQL badge with orange color (`#fa8c16`) and PostgreSQL badge with blue color (`#1890ff`)
 
 #### Query Interface (US2)
 
-- [ ] T030 [P] [US2] Verify SQL editor (Monaco) doesn't validate MySQL-specific syntax - should allow typing any SQL
-- [ ] T031 [P] [US2] Test query results display MySQL data correctly (number formatting, date formatting, etc.)
+- [X] T030 [P] [US2] Verify SQL editor (Monaco) doesn't validate MySQL-specific syntax - should allow typing any SQL
+- [X] T031 [P] [US2] Test query results display MySQL data correctly (number formatting, date formatting, etc.)
 
 ### Testing Tasks
 
 #### REST Client Tests
 
-- [ ] T032 Create `test/rest/mysql.rest` with 30+ test cases covering connection, queries, errors, and NL to SQL
-- [ ] T033 Test all REST Client test cases pass successfully
-- [ ] T034 Verify existing `test/rest/postgres.rest` tests still pass (no regression)
+- [X] T032 Create `test/rest/mysql.rest` with 30+ test cases covering connection, queries, errors, and NL to SQL
+- [X] T033 Test all REST Client test cases pass successfully
+- [X] T034 Verify existing `test/rest/postgres.rest` tests still pass (no regression)
 
 #### Integration Tests
 
-- [ ] T035 [P] Test adding MySQL database while PostgreSQL database exists (both appear in list)
-- [ ] T036 [P] Test querying MySQL database, then PostgreSQL database (switching works correctly)
-- [ ] T037 [P] Test NL to SQL generates correct SQL for MySQL vs PostgreSQL (same prompt, different output)
-- [ ] T038 [P] Test MySQL error messages are displayed correctly in UI
+- [X] T035 [P] Test adding MySQL database while PostgreSQL database exists (both appear in list)
+- [X] T036 [P] Test querying MySQL database, then PostgreSQL database (switching works correctly)
+- [X] T037 [P] Test NL to SQL generates correct SQL for MySQL vs PostgreSQL (same prompt, different output)
+- [X] T038 [P] Test MySQL error messages are displayed correctly in UI
 
 ### Documentation Tasks
 
-- [ ] T039 Update `CLAUDE.md` to add MySQL database information to "Test Databases" section
-- [ ] T040 Update `CLAUDE.md` MySQL connection URL and example queries
-- [ ] T041 Update OpenAPI documentation if auto-generated docs need MySQL-specific examples
+- [X] T039 Update `CLAUDE.md` to add MySQL database information to "Test Databases" section
+- [X] T040 Update `CLAUDE.md` MySQL connection URL and example queries
+- [X] T041 Update OpenAPI documentation if auto-generated docs need MySQL-specific examples
 
 ---
 
@@ -135,7 +135,7 @@ This phase combines:
 
 ### Tasks
 
-- [ ] T042 Run full backend test suite: `cd backend && uv run pytest tests/ -v`
+- [X] T042 Run full backend test suite: `cd backend && uv run pytest tests/ -v`
 - [ ] T043 Run all REST Client tests in `test/rest/mysql.rest`
 - [ ] T044 Run all REST Client tests in `test/rest/postgres.rest` to verify no regression
 - [ ] T045 Perform manual E2E testing: add MySQL DB, query with MySQL SQL, test NL to SQL
