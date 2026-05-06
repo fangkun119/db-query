@@ -138,15 +138,15 @@ This phase combines:
 ### Tasks
 
 - [X] T042 Run full backend test suite: `cd backend && uv run pytest tests/ -v`
-- [ ] T043 Run all REST Client tests in `test/rest/mysql.rest`
-- [ ] T044 Run all REST Client tests in `test/rest/postgres.rest` to verify no regression
-- [ ] T045 Perform manual E2E testing: add MySQL DB, query with MySQL SQL, test NL to SQL
-- [ ] T046 Verify database type badge displays correctly in frontend UI
+- [X] T043 Run all REST Client tests in `test/rest/mysql.rest`
+- [X] T044 Run all REST Client tests in `test/rest/postgres.rest` to verify no regression
+- [X] T045 Perform manual E2E testing: add MySQL DB, query with MySQL SQL, test NL to SQL
+- [X] T046 Verify database type badge displays correctly in frontend UI
 - [X] T046a Verify schema tree tooltip displays table and column comments when hovering over table and column names
-- [ ] T047 Test error handling: invalid URL, connection failure, SQL syntax error
-- [ ] T048 Clean up any test data created during development
-- [ ] T049 Update constitution to v1.1.0 to officially add MySQL support
-- [ ] T050 Create pull request with description of MySQL support implementation
+- [X] T047 Test error handling: invalid URL, connection failure, SQL syntax error
+- [X] T048 Clean up any test data created during development
+- [X] T049 Update constitution to v1.1.0 to officially add MySQL support
+- [X] T050 Create pull request with description of MySQL support implementation
 
 ---
 
