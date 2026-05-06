@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Button, Space, Typography, Input, message, Spin, Empty, Tabs, Popover } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Button, Space, Typography, Input, message, Spin, Empty, Tabs, Popover, Modal } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import DatabaseList from './database-list';
 import DatabaseForm from './database-form';
 import SchemaTree from '../schema/schema-tree';
@@ -153,7 +153,62 @@ export const DatabaseWorkspace: React.FC = () => {
         setQueryResult(result);
         message.success(`Query executed successfully, ${result.totalCount} rows returned`);
       } catch (error: unknown) {
-        message.error(handleApiError(error, 'Query execution failed'));
+        const errorMsg = handleApiError(error, 'Query execution failed');
+        // If error contains generated SQL from backend, show in modal
+        if (errorMsg.includes('Generated SQL:')) {
+          Modal.error({
+            title: 'SQL Generation Failed',
+            icon: <ExclamationCircleOutlined />,
+            width: 700,
+            content: (
+              <div>
+                <p>{errorMsg.split('Generated SQL:')[0]}</p>
+                <p style={{ fontWeight: 600, marginTop: 16 }}>Generated SQL:</p>
+                <pre style={{
+                  backgroundColor: '#f5f5f5',
+                  padding: '12px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  maxHeight: '300px',
+                  overflow: 'auto'
+                }}>
+                  {errorMsg.split('Generated SQL:')[1]}
+                </pre>
+              </div>
+            ),
+          });
+        } else {
+          // Execution failed after successful generation - show the SQL that was generated
+          Modal.error({
+            title: 'Query Execution Failed',
+            icon: <ExclamationCircleOutlined />,
+            width: 700,
+            content: (
+              <div>
+                <p>{errorMsg}</p>
+                {sqlQuery && (
+                  <>
+                    <p style={{ fontWeight: 600, marginTop: 16 }}>Generated SQL:</p>
+                    <pre style={{
+                      backgroundColor: '#f5f5f5',
+                      padding: '12px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-all',
+                      maxHeight: '300px',
+                      overflow: 'auto'
+                    }}>
+                      {sqlQuery}
+                    </pre>
+                  </>
+                )}
+              </div>
+            ),
+          });
+        }
       } finally {
         setExecutingQuery(false);
       }
@@ -169,7 +224,35 @@ export const DatabaseWorkspace: React.FC = () => {
         setQueryResult(result);
         message.success(`Query executed successfully, ${result.totalCount} rows returned`);
       } catch (error: unknown) {
-        message.error(handleApiError(error, 'Query execution failed'));
+        const errorMsg = handleApiError(error, 'Query execution failed');
+        // Show SQL in modal for better debugging
+        Modal.error({
+          title: 'Query Execution Failed',
+          icon: <ExclamationCircleOutlined />,
+          width: 700,
+          content: (
+            <div>
+              <p>{errorMsg}</p>
+              {sqlQuery && (
+                <>
+                  <p style={{ fontWeight: 600, marginTop: 16 }}>Your SQL:</p>
+                  <pre style={{
+                    backgroundColor: '#f5f5f5',
+                    padding: '12px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    maxHeight: '300px',
+                    overflow: 'auto'
+                  }}>
+                    {sqlQuery}
+                  </pre>
+                </>
+              )}
+            </div>
+          ),
+        });
       } finally {
         setExecutingQuery(false);
       }

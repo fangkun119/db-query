@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Typography, Space, Popconfirm, Tag } from 'antd';
+import { Button, Typography, Popconfirm } from 'antd';
 import { DeleteOutlined, DatabaseOutlined } from '@ant-design/icons';
 import type { DatabaseSummary } from '../../types';
 import dayjs from 'dayjs';
@@ -18,15 +18,9 @@ interface DatabaseListProps {
   onClick: (name: string) => void;
 }
 
-const statusConfig: Record<string, { color: string; text: string }> = {
-  active: { color: 'success', text: 'Active' },
-  error: { color: 'error', text: 'Error' },
-  connecting: { color: 'processing', text: 'Connecting' },
-};
-
-const dbTypeConfig: Record<string, { color: string; text: string }> = {
-  postgresql: { color: '#1890ff', text: 'POSTGRESQL' },
-  mysql: { color: '#fa8c16', text: 'MYSQL' },
+const dbTypeText: Record<string, string> = {
+  postgresql: 'PostgreSQL',
+  mysql: 'MySQL',
 };
 
 export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedName, onDelete, onClick }) => {
@@ -38,8 +32,7 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedN
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px' }}>
       {databases.map((db) => {
-        const statusInfo = statusConfig[db.status];
-        const dbTypeInfo = dbTypeConfig[db.dbType] || { color: 'default', text: db.dbType.toUpperCase() };
+        const dbType = dbTypeText[db.dbType] || db.dbType.charAt(0).toUpperCase() + db.dbType.slice(1);
         const lastRefreshed = db.lastRefreshedAt
           ? dayjs(db.lastRefreshedAt).fromNow()
           : 'Never';
@@ -70,18 +63,14 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedN
             className="database-list-item"
           >
             <div style={{ flex: 1, minWidth: 0 }}>
-              {/* First row: Icon + Database Name + Status Badge + DB Type Badge + Delete Button */}
+              {/* First row: Icon + Database Name + Delete Button */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <Space>
-                  <DatabaseOutlined style={{ fontSize: '16px', color: '#333333' }} />
-                  <Text strong style={{ fontSize: '14px', fontWeight: 600, fontFamily: 'sans-serif', color: '#333333' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                  <DatabaseOutlined style={{ fontSize: '16px', color: '#333333', flexShrink: 0 }} />
+                  <Text strong style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'sans-serif', color: '#333333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {db.name.toUpperCase()}
                   </Text>
-                  <Tag color={dbTypeInfo.color}>{dbTypeInfo.text}</Tag>
-                  {statusInfo && (
-                    <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
-                  )}
-                </Space>
+                </div>
                 <Popconfirm
                   title="Delete Connection"
                   description="Are you sure you want to delete this database connection?"
@@ -98,19 +87,22 @@ export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedN
                     danger
                     icon={<DeleteOutlined />}
                     onClick={(e) => e.stopPropagation()}
-                    style={{ color: '#DC3545' }}
+                    style={{ color: '#DC3545', flexShrink: 0 }}
                   />
                 </Popconfirm>
               </div>
               {/* Second row: Info */}
-              <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                <Text type="secondary" style={{ fontSize: '14px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <Text type="secondary" style={{ fontSize: '13px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
+                  {dbType}
+                </Text>
+                <Text type="secondary" style={{ fontSize: '13px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
                   {db.tableCount} tables, {db.viewCount} views
                 </Text>
-                <Text type="secondary" style={{ fontSize: '14px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
+                <Text type="secondary" style={{ fontSize: '13px', color: '#666666', fontWeight: 600, fontFamily: 'sans-serif' }}>
                   Last updated: {lastRefreshed}
                 </Text>
-              </Space>
+              </div>
             </div>
           </div>
         );

@@ -22,8 +22,8 @@ describe('API Service', () => {
   describe('listDbs', () => {
     it('should call GET /databases and return data', async () => {
       const mockDatabases = [
-        { name: 'db1', dbType: 'postgresql', status: 'active', tableCount: 5, viewCount: 2, createdAt: '2024-01-01T00:00:00Z' },
-        { name: 'db2', dbType: 'postgresql', status: 'active', tableCount: 3, viewCount: 1, createdAt: '2024-01-01T00:00:00Z' },
+        { name: 'db1', dbType: 'postgresql', tableCount: 5, viewCount: 2, createdAt: '2024-01-01T00:00:00Z' },
+        { name: 'db2', dbType: 'postgresql', tableCount: 3, viewCount: 1, createdAt: '2024-01-01T00:00:00Z' },
       ]
 
       // Spy on the actual function and mock its implementation
@@ -44,7 +44,7 @@ describe('API Service', () => {
 
   describe('addDb', () => {
     it('should call PUT /databases/:name with request data', async () => {
-      const mockDb = { name: 'test-db', dbType: 'postgresql', status: 'active', tableCount: 0, viewCount: 0, createdAt: '2024-01-01T00:00:00Z' }
+      const mockDb = { name: 'test-db', dbType: 'postgresql', tableCount: 0, viewCount: 0, createdAt: '2024-01-01T00:00:00Z' }
       const request = { url: 'postgresql://localhost/test' }
 
       vi.spyOn(api, 'addDb').mockResolvedValueOnce(mockDb)
@@ -55,7 +55,7 @@ describe('API Service', () => {
     })
 
     it('should encode database name in URL', async () => {
-      const mockDb = { name: 'test-db', dbType: 'postgresql', status: 'active', tableCount: 0, viewCount: 0, createdAt: '2024-01-01T00:00:00Z' }
+      const mockDb = { name: 'test-db', dbType: 'postgresql', tableCount: 0, viewCount: 0, createdAt: '2024-01-01T00:00:00Z' }
       const request = { url: 'postgresql://localhost/test' }
 
       vi.spyOn(api, 'addDb').mockResolvedValueOnce(mockDb)
@@ -72,7 +72,6 @@ describe('API Service', () => {
       const mockDetail = {
         name: 'test-db',
         dbType: 'postgresql',
-        status: 'active',
         tables: [],
         createdAt: '2024-01-01T00:00:00Z',
       }

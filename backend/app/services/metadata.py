@@ -263,15 +263,11 @@ class MetadataService:
                 # Fetch fresh metadata
                 success, error_msg, metadata_list = await MetadataService.fetch_metadata(conn.url)
                 if not success:
-                    # Update connection status to error
-                    conn.status = "error"
-                    await session.commit()
                     return False, error_msg, None
 
                 # Store metadata
                 conn.metadata_json = MetadataService._serialize_metadata(metadata_list)
                 conn.last_refreshed_at = datetime.now(timezone.utc)
-                conn.status = "active"
                 await session.commit()
             else:
                 # Use cached metadata
@@ -302,7 +298,6 @@ class MetadataService:
             response = DatabaseDetailResponse(
                 name=conn.name,
                 db_type=conn.db_type,
-                status=conn.status,
                 tables=tables,
                 created_at=conn.created_at,
                 last_refreshed_at=conn.last_refreshed_at

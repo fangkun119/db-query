@@ -55,7 +55,7 @@
 
 ## Phase 3: User Story 1 — Database Connection and Metadata Explorer (Priority: P1) 🎯 MVP
 
-**Goal**: Users can add a PostgreSQL connection URL, see connection status, browse tables/views and their column details, and delete connections
+**Goal**: Users can add a PostgreSQL connection URL, see database type, browse tables/views and their column details, and delete connections
 
 **Independent Test**: Add a valid PostgreSQL URL → verify tables and views appear with column info → refresh metadata → delete connection
 
@@ -65,7 +65,7 @@
 - [X] T017 [P] [US1] Create metadata service in `backend/app/services/metadata.py` — fetch_metadata: query information_schema.tables JOIN columns, filter out pg_catalog/information_schema schemas, group into TableMetadata/ColumnMetadata, serialize to JSON; parse_metadata: deserialize JSON to response models
 - [X] T018 [US1] Create database API endpoints in `backend/app/api/v1/databases.py` — PUT /dbs/{name} (add), GET /dbs (list), GET /dbs/{name} (detail with cached metadata), POST /dbs/{name}/refresh (force refresh metadata), DELETE /dbs/{name}; error responses per contracts/api.md with English detail messages
 - [X] T019 [US1] Wire database router into FastAPI app in `backend/app/main.py` — include API router with prefix /api/v1
-- [X] T020 [P] [US1] Create database list component in `frontend/src/components/database/database-list.tsx` — Ant Design List showing connections with name, status badge, table/view counts, last refreshed time, delete button with confirm
+- [X] T020 [P] [US1] Create database list component in `frontend/src/components/database/database-list.tsx` — Ant Design List showing connections with name, database type, table/view counts, last refreshed time, delete button with confirm
 - [X] T021 [P] [US1] Create database form component in `frontend/src/components/database/database-form.tsx` — Ant Design Modal with Input for connection name and Input for PostgreSQL URL, submit calls addDb, error display for connection failures
 - [X] T022 [P] [US1] Create schema tree component in `frontend/src/components/schema/schema-tree.tsx` — Ant Design DirectoryTree displaying tables/views grouped by schema, expand to show column name, data type, nullable badge
 - [X] T023 [US1] Create database workspace component in `frontend/src/components/database/database-workspace.tsx` — IDE-style three-column layout: left panel with DatabaseList and "添加数据库" button, center panel with SchemaTree and refresh button, right panel with editor/results area; **NOTE**: Original plan specified separate pages/ directory, actual implementation uses single-page workspace component (see ADR-001)

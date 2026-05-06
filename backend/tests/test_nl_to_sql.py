@@ -269,7 +269,7 @@ class TestBuildSystemPrompt:
 
         prompt = NLToSQLService._build_system_prompt(schema_ddl)
 
-        assert "professional PostgreSQL SQL generation assistant" in prompt
+        assert "expert PostgreSQL SQL generation assistant" in prompt
         assert schema_ddl in prompt
         assert "Only generate SELECT" in prompt
         assert "Do NOT add LIMIT" in prompt
@@ -434,6 +434,8 @@ class TestGenerateSQL:
 
             assert success is False
             assert "validation failed" in error_msg.lower()
+            assert "Generated SQL:" in error_msg
+            assert "SELECT * FROM invalid_table" in error_msg
             assert result is None
 
 

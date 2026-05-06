@@ -38,6 +38,28 @@ class ValidatorService:
         if ";" in stripped[:-1]:  # Allow trailing semicolon
             raise ValidationError("Only single SQL queries are supported")
 
+        # Check for incomplete WITH/CTE queries (WITH without main SELECT)
+        if stripped.upper().startswith("WITH"):
+            # Count WITH and closing parentheses
+            with_count = stripped.upper().count("WITH")
+            # A complete WITH query should have AS (...) followed by SELECT
+            # Simple check: after the closing paren of CTE, there should be SELECT
+            paren_count = 0
+            last_paren_pos = -1
+            for i, char in enumerate(stripped):
+                if char == '(':
+                    paren_count += 1
+                elif char == ')':
+                    paren_count -= 1
+                    if paren_count == 0:
+                        last_paren_pos = i
+
+            # If we found the closing paren of CTE, check if SELECT follows
+            if last_paren_pos > 0:
+                after_cte = stripped[last_paren_pos + 1:].strip().upper()
+                if not after_cte.startswith("SELECT"):
+                    raise ValidationError("Incomplete WITH/CTE query: missing main SELECT statement after CTE definition. Example: WITH cte AS (...) SELECT * FROM cte")
+
         # Remove trailing semicolon if present
         if stripped.endswith(";"):
             sql = sql[:-1].strip()

@@ -20,7 +20,6 @@ export interface TableMeta {
 export interface DatabaseSummary {
   name: string;
   dbType: DatabaseType;
-  status: string;
   tableCount: number;
   viewCount: number;
   createdAt: string;
@@ -30,7 +29,6 @@ export interface DatabaseSummary {
 export interface DatabaseDetail {
   name: string;
   dbType: DatabaseType;
-  status: string;
   tables: TableMeta[];
   createdAt: string;
   lastRefreshedAt?: string;

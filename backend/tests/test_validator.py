@@ -89,6 +89,24 @@ class TestValidateAndEnrich:
         assert error is None
         assert "LIMIT 500" in enriched.upper()
 
+    def test_with_cte_query(self):
+        """Test that WITH (CTE) queries are supported."""
+        sql = "WITH cte AS (SELECT * FROM users) SELECT * FROM cte"
+        enriched, error = ValidatorService.validate_and_enrich(sql, default_limit=1000)
+
+        assert error is None
+        assert "LIMIT 1000" in enriched.upper()
+
+    def test_incomplete_cte_query(self):
+        """Test that incomplete WITH/CTE queries are rejected."""
+        sql = "WITH cte AS (SELECT * FROM users)"
+
+        with pytest.raises(ValidationError) as exc_info:
+            ValidatorService.validate_and_enrich(sql, default_limit=1000)
+
+        assert "Incomplete WITH/CTE" in str(exc_info.value)
+        assert "missing main SELECT" in str(exc_info.value)
+
 
 class TestValidateForNlGenerated:
     def test_valid_sql(self):

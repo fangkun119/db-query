@@ -16,7 +16,6 @@ const mockDatabases = [
   {
     name: 'test-db',
     dbType: 'postgresql',
-    status: 'active',
     tableCount: 5,
     viewCount: 2,
     createdAt: '2024-01-01T00:00:00Z',
@@ -27,7 +26,6 @@ const mockDatabases = [
 const mockDatabaseDetail = {
   name: 'test-db',
   dbType: 'postgresql',
-  status: 'active',
   tables: [
     {
       schemaName: 'public',

@@ -96,7 +96,7 @@ frontend/
 │   ├── index.css
 │   ├── components/
 │   │   ├── database/
-│   │   │   ├── database-list.tsx       # DB list with status badges
+│   │   │   ├── database-list.tsx       # DB list with database type
 │   │   │   ├── database-form.tsx       # Add DB connection modal
 │   │   │   └── database-workspace.tsx  # Main workspace (schema + editor + results)
 │   │   ├── schema/
@@ -134,7 +134,7 @@ Use Chat Completions with Structured Outputs (`client.beta.chat.completions.pars
 
 ### D4: IDE-Style Frontend Layout
 **Implementation**: `database-workspace.tsx` with three-column layout:
-- Left: Database list with connection status
+- Left: Database list with database type
 - Center: Schema tree (tables/views with columns)
 - Right: Tabbed editor (Manual SQL + Natural Language) + Results table
 

@@ -25,7 +25,10 @@ class NLToSQLService:
 
     # Database-specific system prompts
     SYSTEM_PROMPTS = {
-        "postgresql": """You are a professional PostgreSQL SQL generation assistant. Generate SELECT queries based on user's natural language questions.
+        "postgresql": """You are an expert PostgreSQL SQL generation assistant specializing in:
+- Complex queries: CTEs (WITH complete SELECT statements), multi-table JOINs, subqueries
+- Date/time operations, window functions, and aggregations
+- Translating natural language into precise, executable PostgreSQL SQL
 
 Database schema:
 {schema_ddl}
@@ -35,20 +38,21 @@ Requirements:
 2. Do NOT add LIMIT clause (system will auto-add)
 3. Use PostgreSQL syntax
 4. Table and column names must strictly match the schema above
-5. **Pay close attention to column comments** - they contain:
-   - Business context (e.g., "工作年限" = years of experience)
-   - Foreign key relationships (e.g., "关联candidates表" means refers to candidates table)
-   - Enum value explanations (e.g., "applied, screening, interviewing, offered, hired")
+5. **Pay close attention to column comments** - they contain business context, foreign key relationships (e.g., "refers to candidates table"), and enum value explanations
 6. Use relationship hints in comments to construct proper JOINs
 7. Think step-by-step before writing SQL:
    - Identify which tables are needed
-   - Identify relationships between tables (check column comments for "关联" or "refers to")
+   - Identify relationships between tables (check column comments for "refers to")
    - Identify WHERE conditions
    - Then write the final query
 8. If the question is ambiguous or schema is insufficient:
    - Still generate best-effort SQL
-   - Use explanation field to clarify assumptions made (e.g., "Assuming 'senior' refers to position title")
-9. Return SQL without Markdown formatting (no ```sql markers)
+   - Use explanation field to clarify assumptions made
+9. **CRITICAL**: Always generate COMPLETE, EXECUTABLE SQL:
+   - If using WITH/CTE, MUST include the main SELECT statement after the CTE
+   - Example: "WITH cte AS (...) SELECT * FROM cte" - NOT just "WITH cte AS (...)"
+   - The SQL must be able to run directly in PostgreSQL
+10. Return SQL without Markdown formatting (no ```sql markers)
 
 Examples:
 
@@ -71,15 +75,37 @@ ORDER BY application_count DESC;
 Q: Show candidates with more than 5 years of experience
 A: SELECT * FROM candidates WHERE years_of_experience > 5;
 
-Q: 显示每个职位的应聘人数
+Q: Show application count per position
 A: SELECT p.title, COUNT(cpa.candidate_id) as application_count
 FROM positions p
 LEFT JOIN candidate_position_applications cpa ON p.id = cpa.position_id
 GROUP BY p.id, p.title;
 
+Q: List job applications with positions and candidates from the last 3 weeks
+A: WITH recent_applications AS (
+    SELECT
+        cpa.id AS application_id,
+        cpa.candidate_id,
+        cpa.position_id,
+        cpa.applied_date,
+        cpa.status AS application_status,
+        p.title AS position_title,
+        cand.first_name,
+        cand.last_name,
+        cand.email
+    FROM candidate_position_applications cpa
+    JOIN candidates cand ON cpa.candidate_id = cand.id
+    JOIN positions p ON cpa.position_id = p.id
+    WHERE cpa.applied_date >= CURRENT_DATE - INTERVAL '3 weeks'
+)
+SELECT * FROM recent_applications ORDER BY applied_date DESC;
+
 Now answer the user's question.
 """,
-        "mysql": """You are a professional MySQL SQL generation assistant. Generate SELECT queries based on user's natural language questions.
+        "mysql": """You are an expert MySQL SQL generation assistant specializing in:
+- Complex queries: CTEs (WITH complete SELECT statements), multi-table JOINs, subqueries
+- Date/time operations, window functions, and aggregations
+- Translating natural language into precise, executable MySQL SQL
 
 Database schema:
 {schema_ddl}
@@ -93,20 +119,21 @@ Requirements:
    - Use backticks \` for identifiers if needed (table/column names with spaces or keywords)
    - Use DATE() or DATE_FORMAT() for date operations
 4. Table and column names must strictly match the schema above
-5. **Pay close attention to column comments** - they contain:
-   - Business context (e.g., "工作年限" = years of experience)
-   - Foreign key relationships (e.g., "关联candidates表" means refers to candidates table)
-   - Enum value explanations (e.g., "applied, screening, interviewing, offered, hired")
+5. **Pay close attention to column comments** - they contain business context, foreign key relationships (e.g., "refers to candidates table"), and enum value explanations
 6. Use relationship hints in comments to construct proper JOINs
 7. Think step-by-step before writing SQL:
    - Identify which tables are needed
-   - Identify relationships between tables (check column comments for "关联" or "refers to")
+   - Identify relationships between tables (check column comments for "refers to")
    - Identify WHERE conditions
    - Then write the final query
 8. If the question is ambiguous or schema is insufficient:
    - Still generate best-effort SQL
-   - Use explanation field to clarify assumptions made (e.g., "Assuming 'senior' refers to position title")
-9. Return SQL without Markdown formatting (no ```sql markers)
+   - Use explanation field to clarify assumptions made
+9. **CRITICAL**: Always generate COMPLETE, EXECUTABLE SQL:
+   - If using WITH/CTE, MUST include the main SELECT statement after the CTE
+   - Example: "WITH cte AS (...) SELECT * FROM cte" - NOT just "WITH cte AS (...)"
+   - The SQL must be able to run directly in MySQL
+10. Return SQL without Markdown formatting (no ```sql markers)
 
 Examples:
 
@@ -129,11 +156,29 @@ ORDER BY application_count DESC;
 Q: Show users created after a specific date
 A: SELECT * FROM users WHERE DATE(created_at) > '2024-01-01';
 
-Q: 显示每个职位的应聘人数
+Q: Show application count per position
 A: SELECT p.title, COUNT(a.user_id) as application_count
 FROM positions p
 LEFT JOIN applications a ON p.id = a.position_id
 GROUP BY p.id, p.title;
+
+Q: List job applications with positions and users from the last 3 weeks
+A: WITH recent_applications AS (
+    SELECT
+        a.id AS application_id,
+        a.user_id,
+        a.position_id,
+        a.created_at AS applied_date,
+        p.title AS position_title,
+        u.first_name,
+        u.last_name,
+        u.email
+    FROM applications a
+    JOIN users u ON a.user_id = u.id
+    JOIN positions p ON a.position_id = p.id
+    WHERE DATE(a.created_at) >= DATE_SUB(CURDATE(), INTERVAL 3 WEEK)
+)
+SELECT * FROM recent_applications ORDER BY applied_date DESC;
 
 Now answer the user's question.
 """
@@ -355,7 +400,8 @@ Now answer the user's question.
         is_valid, error_msg = ValidatorService.validate_for_nl_generated(result.sql)
         if not is_valid:
             logger.warning(f"Generated SQL validation failed: {error_msg}")
-            return False, f"Generated SQL validation failed: {error_msg}", None
+            logger.warning(f"Generated SQL content: {result.sql}")
+            return False, f"Generated SQL validation failed: {error_msg}\n\nGenerated SQL:\n{result.sql}", None
 
         logger.info(f"Successfully generated SQL: {result.sql[:50]}...")
         return True, "", result

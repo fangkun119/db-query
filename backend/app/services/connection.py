@@ -93,7 +93,6 @@ class ConnectionService:
                 name=name,
                 url=request.url,
                 db_type=detected_db_type,
-                status="active",
                 created_at=datetime.now(timezone.utc)
             )
             session.add(conn)
@@ -103,7 +102,6 @@ class ConnectionService:
             response = DatabaseSummaryResponse(
                 name=conn.name,
                 db_type=conn.db_type,
-                status=conn.status,
                 table_count=0,
                 view_count=0,
                 created_at=conn.created_at,
@@ -140,7 +138,6 @@ class ConnectionService:
                 responses.append(DatabaseSummaryResponse(
                     name=conn.name,
                     db_type=conn.db_type,
-                    status=conn.status,
                     table_count=table_count,
                     view_count=view_count,
                     created_at=conn.created_at,

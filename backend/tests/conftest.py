@@ -33,7 +33,6 @@ async def sample_connection(async_session: AsyncSession):
         name="test-db",
         url="postgresql://user:pass@localhost:5432/testdb",
         db_type="postgresql",
-        status="active",
         created_at=datetime.now(timezone.utc),
     )
     async_session.add(conn)
@@ -72,7 +71,6 @@ async def sample_connection_with_metadata(async_session: AsyncSession):
         name="test-db-meta",
         url="postgresql://user:pass@localhost:5432/testdb",
         db_type="postgresql",
-        status="active",
         metadata_json=json.dumps(metadata),
         created_at=datetime.now(timezone.utc),
         last_refreshed_at=datetime.now(timezone.utc),

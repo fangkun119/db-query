@@ -136,7 +136,6 @@ describe('DatabaseForm', () => {
       vi.mocked(api.addDb).mockResolvedValue({
         name: 'test-db',
         dbType: 'postgresql',
-        status: 'active',
         tableCount: 0,
         viewCount: 0,
         createdAt: '2024-01-01T00:00:00Z',
@@ -172,7 +171,6 @@ describe('DatabaseForm', () => {
       vi.mocked(api.addDb).mockResolvedValue({
         name: 'test-db',
         dbType: 'postgresql',
-        status: 'active',
         tableCount: 0,
         viewCount: 0,
         createdAt: '2024-01-01T00:00:00Z',

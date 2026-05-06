@@ -18,6 +18,15 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        // Increase timeout for long-running NL-to-SQL generation
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, _req, _res) => {
+            // Set longer timeout for proxy requests (2 minutes)
+            if (proxyReq.path?.includes('/query/natural')) {
+              proxyReq.setTimeout(120000);
+            }
+          });
+        },
       },
     },
     headers: {

@@ -15,7 +15,6 @@ class DatabaseSummaryResponse(BaseModel):
 
     name: str
     db_type: str
-    status: str
     table_count: int
     view_count: int
     created_at: datetime
@@ -48,7 +47,6 @@ class DatabaseDetailResponse(BaseModel):
 
     name: str
     db_type: str
-    status: str
     tables: list[TableMetadataResponse]
     created_at: datetime
     last_refreshed_at: Optional[datetime] = None
