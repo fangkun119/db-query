@@ -255,67 +255,42 @@ Now answer the user's question.
 
     @staticmethod
     def _build_schema_ddl(tables: list[TableMetadata]) -> str:
-        """Build DDL-style schema context for OpenAI prompt.
+        """Build compact schema context for OpenAI prompt.
+
+        Strips NOT NULL, PRIMARY KEY, DEFAULT constraints and CREATE TABLE syntax
+        to reduce token usage while preserving information needed for SQL generation:
+        table/column names, data types, comments (with FK hints), and enum values.
 
         Args:
             tables: List of table metadata
 
         Returns:
-            DDL string with CREATE TABLE statements and comments
+            Compact schema string
         """
-        ddl_lines = []
-        enum_values = {}
-        relationships = []
+        table_blocks = []
 
-        # Build table DDLs
         for table in tables:
             columns_ddl = []
             for col in table.columns:
                 col_def = f"  {col.name} {col.data_type}"
-                if not col.is_nullable:
-                    col_def += " NOT NULL"
-                if col.is_primary_key:
-                    col_def += " PRIMARY KEY"
-                if col.default_value:
-                    col_def += f" DEFAULT {col.default_value}"
 
-                # Add comment after column definition (comma added during join)
+                # Inline enum values extracted from comment
+                enum_vals = NLToSQLService._extract_enum_values(col.comment) if col.comment else None
+                if enum_vals:
+                    col_def += f"(enum: {enum_vals})"
+
                 if col.comment:
                     col_def += f" -- {col.comment}"
 
-                    # Extract enum values if present
-                    enum_vals = NLToSQLService._extract_enum_values(col.comment)
-                    if enum_vals:
-                        enum_values[f"{table.table_name}.{col.name}"] = enum_vals
-
-                    # Collect foreign key relationships
-                    if "关联" in col.comment or "refers to" in col.comment.lower():
-                        relationships.append(f"-- {table.schema_name}.{table.table_name}.{col.name} → {col.comment}")
-
                 columns_ddl.append(col_def)
 
-            table_ddl = f"CREATE TABLE {table.schema_name}.{table.table_name} (\n"
-            table_ddl += ",\n".join(columns_ddl)
-            table_ddl += "\n);"
+            header = f"-- {table.table_name}"
             if table.comment:
-                table_ddl += f" -- {table.comment}"
-            ddl_lines.append(table_ddl)
+                header += f": {table.comment}"
+            table_block = f"{header}\n{table.table_name}(\n" + "\n".join(columns_ddl) + "\n)"
+            table_blocks.append(table_block)
 
-        # Add empty line between tables
-        result = "\n\n".join(ddl_lines)
-
-        # Add foreign key relationships summary
-        if relationships:
-            result += "\n\n-- Foreign Key Relationships:\n"
-            result += "\n".join(relationships)
-
-        # Add enum values summary
-        if enum_values:
-            result += "\n\n-- Enum Values:\n"
-            for col_path, values in enum_values.items():
-                result += f"-- {col_path}: {values}\n"
-
-        return result
+        return "\n\n".join(table_blocks)
 
     @staticmethod
     def _build_system_prompt(schema_ddl: str, db_type: str = "postgresql") -> str:
@@ -359,7 +334,7 @@ Now answer the user's question.
         client = OpenAI(
             api_key=settings.openai_api_key,
             base_url=settings.openai_api_endpoint,
-            timeout=30.0,
+            timeout=float(settings.db_operation_timeout),
             max_retries=2
         )
 

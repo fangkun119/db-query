@@ -8,6 +8,7 @@ import logging
 from app.db.sqlite import DatabaseConnection, get_async_session_maker, get_engine
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse
 from app.services.db_utils import ephemeral_engine
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class ConnectionService:
         try:
             async with ephemeral_engine(test_url) as engine:
                 async with engine.connect() as conn:
-                    await asyncio.wait_for(conn.execute(select(1)), timeout=30)
+                    await asyncio.wait_for(conn.execute(select(1)), timeout=get_settings().db_operation_timeout)
             return True, ""
         except asyncio.TimeoutError:
             logger.warning("Connection test timed out")

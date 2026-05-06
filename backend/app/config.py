@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     db_query_db_path: str = "~/.db_query/db_query.db"
     openai_model: str = "gpt-4o"
     cors_origins: str = "*"
+    db_operation_timeout: int = 60
 
     model_config = SettingsConfigDict(
         env_file=Path.home() / ".db_query" / "env.properties",

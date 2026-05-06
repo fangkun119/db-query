@@ -1,10 +1,12 @@
 """Query execution service."""
 
 from sqlalchemy import text
+import asyncio
 import time
 from typing import Optional
 import logging
 
+from app.config import get_settings
 from app.models.query import QueryRequest, QueryResultResponse
 from app.services.validator import ValidatorService, ValidationError
 from app.services.connection import ConnectionService
@@ -49,7 +51,10 @@ class QueryService:
 
             async with ephemeral_engine(query_url) as engine:
                 async with engine.connect() as conn:
-                    result = await conn.execute(text(enriched_sql))
+                    result = await asyncio.wait_for(
+                        conn.execute(text(enriched_sql)),
+                        timeout=get_settings().db_operation_timeout
+                    )
 
                     rows = result.mappings().all()
                     column_names = list(rows[0].keys()) if rows else []

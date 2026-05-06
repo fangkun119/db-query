@@ -12,6 +12,7 @@ from app.models.metadata import TableMetadata, ColumnMetadata
 from app.models.database import DatabaseDetailResponse
 from app.services.connection import ConnectionService
 from app.services.db_utils import ephemeral_engine
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +124,7 @@ class MetadataService:
                     query_text = MetadataService._get_metadata_query(db_type)
                     query = text(query_text)
 
-                    result = await asyncio.wait_for(conn.execute(query), timeout=30)
+                    result = await asyncio.wait_for(conn.execute(query), timeout=get_settings().db_operation_timeout)
                     rows = result.mappings().all()
 
                     # Group by table using named column access
