@@ -81,7 +81,7 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 - **FR-005a**: System MUST provide a manual refresh option for users to update metadata when database schemas change
 - **FR-006**: System MUST query MySQL `information_schema` system tables to obtain MySQL database metadata
 - **FR-007**: System MUST execute SQL queries directly on MySQL databases without performing SQL syntax validation or type checking
-- **FR-008**: System MUST display MySQL database error messages directly and accurately to users when queries fail
+- **FR-008**: System MUST display database error messages accurately in a consistent format to users when queries fail
 - **FR-009**: System MUST automatically append `LIMIT N` clause with MySQL-compatible syntax to SELECT queries that lack a LIMIT clause
 - **FR-010**: System MUST notify users when result sets are truncated due to automatic LIMIT addition, showing "仅显示前 N 行" message
 - **FR-011**: System MUST generate MySQL-specific SQL syntax when using natural language query feature on MySQL databases

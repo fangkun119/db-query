@@ -349,7 +349,7 @@ Now answer the user's question.
         Returns:
             Tuple of (success, error_message, result)
         """
-        logger.info(f"Generating SQL for question: {question[:50]}... (db_type: {db_type})")
+        logger.info("Generating SQL for question: %s... (db_type: %s)", question[:50], db_type)
 
         # Build schema context
         schema_ddl = NLToSQLService._build_schema_ddl(tables)
@@ -384,34 +384,21 @@ Now answer the user's question.
 
             result = SQLGenerationResult(sql=sql, explanation=None)
 
-        except AuthenticationError as e:
-            logger.error(f"OpenAI authentication error: {str(e)}")
-            return False, NLToSQLService.ERROR_MESSAGES[AuthenticationError], None
-        except RateLimitError as e:
-            logger.error(f"OpenAI rate limit error: {str(e)}")
-            return False, NLToSQLService.ERROR_MESSAGES[RateLimitError], None
-        except APITimeoutError as e:
-            logger.error(f"OpenAI timeout error: {str(e)}")
-            return False, NLToSQLService.ERROR_MESSAGES[APITimeoutError], None
-        except APIConnectionError as e:
-            logger.error(f"OpenAI connection error: {str(e)}")
-            return False, NLToSQLService.ERROR_MESSAGES[APIConnectionError], None
-        except InternalServerError as e:
-            logger.error(f"OpenAI internal server error: {str(e)}")
-            return False, NLToSQLService.ERROR_MESSAGES[InternalServerError], None
-        except APIError as e:
-            logger.error(f"OpenAI API error: {str(e)}")
-            return False, NLToSQLService.ERROR_MESSAGES[APIError], None
+        except (AuthenticationError, RateLimitError, APITimeoutError,
+                APIConnectionError, InternalServerError, APIError) as e:
+            msg = NLToSQLService.ERROR_MESSAGES.get(type(e), "OpenAI API call failed")
+            logger.error("OpenAI %s: %s", type(e).__name__, e)
+            return False, msg, None
         except Exception as e:
-            logger.error(f"Unexpected error during SQL generation: {str(e)}")
-            return False, f"Failed to generate SQL: {str(e)}", None
+            logger.error("Unexpected error during SQL generation: %s", e)
+            return False, f"Failed to generate SQL: {e}", None
 
         # Validate generated SQL
-        is_valid, error_msg = ValidatorService.validate_for_nl_generated(result.sql)
+        is_valid, error_msg = ValidatorService.validate_for_nl_generated(result.sql, db_type=db_type)
         if not is_valid:
-            logger.warning(f"Generated SQL validation failed: {error_msg}")
-            logger.warning(f"Generated SQL content: {result.sql}")
+            logger.warning("Generated SQL validation failed: %s", error_msg)
+            logger.warning("Generated SQL content: %s", result.sql)
             return False, f"Generated SQL validation failed: {error_msg}\n\nGenerated SQL:\n{result.sql}", None
 
-        logger.info(f"Successfully generated SQL: {result.sql[:50]}...")
+        logger.info("Successfully generated SQL: %s...", result.sql[:50])
         return True, "", result

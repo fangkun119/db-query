@@ -1,7 +1,5 @@
 """Query execution service."""
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.pool import NullPool
 from sqlalchemy import text
 import time
 from typing import Optional
@@ -9,6 +7,8 @@ import logging
 
 from app.models.query import QueryRequest, QueryResultResponse
 from app.services.validator import ValidatorService, ValidationError
+from app.services.connection import ConnectionService
+from app.services.db_utils import ephemeral_engine
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,8 @@ class QueryService:
     async def execute_query(
         connection_url: str,
         request: QueryRequest,
-        default_limit: int = 1000
+        default_limit: int = 1000,
+        db_type: str = "postgresql"
     ) -> tuple[Optional[QueryResultResponse], str | None]:
         """Execute a SQL query on the database.
 
@@ -28,79 +29,50 @@ class QueryService:
             connection_url: Database connection URL (PostgreSQL or MySQL)
             request: Query request with SQL
             default_limit: Default LIMIT for truncation detection
+            db_type: Database type for dialect-specific validation
 
         Returns:
             Tuple of (QueryResultResponse or None, error_message)
         """
-        # Convert to async URL if needed
-        from app.services.connection import ConnectionService
         query_url = ConnectionService.get_connection_url(connection_url)
 
         # Validate and enrich SQL
         try:
-            enriched_sql, _ = ValidatorService.validate_and_enrich(request.sql, default_limit)
+            enriched_sql, _, is_truncated = ValidatorService.validate_and_enrich(
+                request.sql, default_limit, db_type=db_type
+            )
         except ValidationError as e:
             return None, e.message
 
-        # Check if LIMIT was injected (for truncation detection)
-        original_had_limit = " LIMIT " in request.sql.upper() or " limit " in request.sql
-        is_truncated = not original_had_limit and default_limit > 0
-
-        engine = None
         try:
             start_time = time.time()
 
-            engine = create_async_engine(query_url, poolclass=NullPool)
+            async with ephemeral_engine(query_url) as engine:
+                async with engine.connect() as conn:
+                    result = await conn.execute(text(enriched_sql))
 
-            async with engine.connect() as conn:
-                result = await conn.execute(text(enriched_sql))
-
-                # Get column names from result keys
-                if result.returns_rows:
                     rows = result.mappings().all()
-                    if rows:
-                        column_names = list(rows[0].keys())
-                        # Convert RowMapping to dict
-                        row_data = [dict(row) for row in rows]
-                    else:
-                        # Empty result set - need to get column names from result.description
-                        # For this, we need to fetch with rows
-                        column_names = []
-                        row_data = []
-                else:
-                    # No rows returned (shouldn't happen with our validation)
-                    column_names = []
-                    row_data = []
+                    column_names = list(rows[0].keys()) if rows else []
+                    row_data = [dict(row) for row in rows]
 
-                execution_time_ms = (time.time() - start_time) * 1000
+                    execution_time_ms = (time.time() - start_time) * 1000
 
-                query_result = QueryResultResponse(
-                    column_names=column_names,
-                    row_data=row_data,
-                    total_count=len(row_data),
-                    is_truncated=is_truncated,
-                    execution_time_ms=round(execution_time_ms, 2)
-                )
+                    query_result = QueryResultResponse(
+                        column_names=column_names,
+                        row_data=row_data,
+                        total_count=len(row_data),
+                        is_truncated=is_truncated,
+                        execution_time_ms=round(execution_time_ms, 2)
+                    )
 
-                logger.info(
-                    f"Query executed successfully: {len(row_data)} rows, "
-                    f"{execution_time_ms:.2f}ms, truncated={is_truncated}"
-                )
+                    logger.info(
+                        "Query executed: %d rows, %.2fms, truncated=%s",
+                        len(row_data), execution_time_ms, is_truncated
+                    )
 
-                return query_result, None
+                    return query_result, None
 
         except Exception as e:
             error_str = str(e)
-            logger.error(f"Query execution failed: {error_str}")
-
-            # For MySQL, preserve the raw error message format
-            # MySQL errors typically contain useful error codes
-            if "mysql" in query_url.lower():
-                return None, error_str
-
-            # For PostgreSQL and other databases, format the error
+            logger.error("Query execution failed: %s", error_str)
             return None, f"Query execution failed: {error_str}"
-
-        finally:
-            if engine:
-                await engine.dispose()

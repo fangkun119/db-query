@@ -3,8 +3,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic.alias_generators import to_camel
 
-# Re-export metadata types to avoid duplication
-from app.models.metadata import ColumnMetadataResponse, TableMetadataResponse
+from app.models.metadata import TableMetadata
 
 
 class CreateConnectionRequest(BaseModel):
@@ -29,6 +28,6 @@ class DatabaseDetailResponse(BaseModel):
 
     name: str
     db_type: str
-    tables: list[TableMetadataResponse]
+    tables: list[TableMetadata]
     created_at: datetime
     last_refreshed_at: Optional[datetime] = None

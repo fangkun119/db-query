@@ -1,6 +1,6 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
-from sqlalchemy import text
+from sqlalchemy import text, select
 from typing import Optional
 import asyncio
 import json
@@ -8,9 +8,10 @@ from datetime import datetime, timezone
 import logging
 
 from app.db.sqlite import DatabaseConnection, get_async_session_maker
-from app.models.metadata import TableMetadata, ColumnMetadata, TableMetadataResponse, ColumnMetadataResponse
+from app.models.metadata import TableMetadata, ColumnMetadata
 from app.models.database import DatabaseDetailResponse
 from app.services.connection import ConnectionService
+from app.services.db_utils import ephemeral_engine
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,11 @@ class MetadataService:
     @staticmethod
     def _get_metadata_query(db_type: str) -> str:
         """Get metadata query for specific database type."""
+        excluded = MetadataService.EXCLUDED_SCHEMAS.get(db_type, set())
+        excluded_list = ", ".join(f"'{s}'" for s in excluded)
+
         if db_type == "mysql":
-            return """
+            return f"""
                 SELECT
                     t.table_schema,
                     t.table_name,
@@ -54,11 +58,11 @@ class MetadataService:
                     AND kcu.table_name = t.table_name
                     AND kcu.column_name = c.column_name
                     AND kcu.constraint_name = tc.constraint_name
-                WHERE t.table_schema NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
+                WHERE t.table_schema NOT IN ({excluded_list})
                 ORDER BY t.table_schema, t.table_name, c.ordinal_position
             """
         else:  # postgresql
-            return """
+            return f"""
                 SELECT
                     t.table_schema,
                     t.table_name,
@@ -92,7 +96,7 @@ class MetadataService:
                     ON pgd.objoid = pgc.oid AND pgd.objsubid = 0
                 LEFT JOIN pg_description pgd_col
                     ON pgd_col.objoid = pgc.oid AND pgd_col.objsubid = c.ordinal_position
-                WHERE t.table_schema NOT IN ('pg_catalog', 'information_schema')
+                WHERE t.table_schema NOT IN ({excluded_list})
                 ORDER BY t.table_schema, t.table_name, c.ordinal_position
             """
 
@@ -112,74 +116,71 @@ class MetadataService:
         db_type = ConnectionService._detect_db_type(url)
         async_url = ConnectionService.get_connection_url(url)
 
-        engine = None
         try:
-            engine = create_async_engine(async_url, poolclass=NullPool)
-            async with engine.connect() as conn:
-                # Get database-specific query
-                query_text = MetadataService._get_metadata_query(db_type)
-                query = text(query_text)
+            async with ephemeral_engine(async_url) as engine:
+                async with engine.connect() as conn:
+                    # Get database-specific query
+                    query_text = MetadataService._get_metadata_query(db_type)
+                    query = text(query_text)
 
-                result = await asyncio.wait_for(conn.execute(query), timeout=30)
-                rows = result.fetchall()
+                    result = await asyncio.wait_for(conn.execute(query), timeout=30)
+                    rows = result.mappings().all()
 
-                # Group by table
-                tables_dict = {}
-                for row in rows:
-                    schema_name = row[0]
-                    table_name = row[1]
-                    table_type = row[2]
-                    table_comment = row[9]  # obj_description for table
+                    # Group by table using named column access
+                    tables_dict = {}
+                    for row in rows:
+                        schema_name = row["table_schema"]
+                        table_name = row["table_name"]
+                        table_type = row["table_type"]
+                        table_comment = row["table_comment"]
 
-                    key = f"{schema_name}.{table_name}"
-                    if key not in tables_dict:
-                        tables_dict[key] = {
-                            "schema_name": schema_name,
-                            "table_name": table_name,
-                            "table_type": table_type,
-                            "comment": table_comment,
-                            "columns": []
-                        }
+                        key = f"{schema_name}.{table_name}"
+                        if key not in tables_dict:
+                            tables_dict[key] = {
+                                "schema_name": schema_name,
+                                "table_name": table_name,
+                                "table_type": table_type,
+                                "comment": table_comment,
+                                "columns": []
+                            }
 
-                    # Add column if present (views might have no columns in some DBs)
-                    if row[3]:  # column_name
-                        column_comment = row[10]  # col_description for column
-                        tables_dict[key]["columns"].append({
-                            "name": row[3],
-                            "data_type": row[4],
-                            "is_nullable": row[5] == "YES",
-                            "default_value": row[6],
-                            "ordinal_position": row[7],
-                            "is_primary_key": row[8] if row[8] is not None else False,
-                            "comment": column_comment
-                        })
+                        # Add column if present (views might have no columns in some DBs)
+                        column_name = row["column_name"]
+                        if column_name:
+                            column_comment = row["column_comment"]
+                            tables_dict[key]["columns"].append({
+                                "name": column_name,
+                                "data_type": row["data_type"],
+                                "is_nullable": row["is_nullable"] == "YES",
+                                "default_value": row["column_default"],
+                                "ordinal_position": row["ordinal_position"],
+                                "is_primary_key": row["is_primary_key"] if row["is_primary_key"] is not None else False,
+                                "comment": column_comment
+                            })
 
-                # Convert to TableMetadata models
-                metadata_list = []
-                for table_data in tables_dict.values():
-                    columns = [
-                        ColumnMetadata(**col) for col in table_data["columns"]
-                    ]
-                    metadata_list.append(TableMetadata(
-                        schema_name=table_data["schema_name"],
-                        table_name=table_data["table_name"],
-                        table_type=table_data["table_type"],
-                        columns=columns,
-                        comment=table_data.get("comment")
-                    ))
+                    # Convert to TableMetadata models
+                    metadata_list = []
+                    for table_data in tables_dict.values():
+                        columns = [
+                            ColumnMetadata(**col) for col in table_data["columns"]
+                        ]
+                        metadata_list.append(TableMetadata(
+                            schema_name=table_data["schema_name"],
+                            table_name=table_data["table_name"],
+                            table_type=table_data["table_type"],
+                            columns=columns,
+                            comment=table_data.get("comment")
+                        ))
 
-                logger.info(f"Successfully fetched metadata for {len(metadata_list)} tables")
-                return True, "", metadata_list
+                    logger.info("Successfully fetched metadata for %d tables", len(metadata_list))
+                    return True, "", metadata_list
 
         except asyncio.TimeoutError:
             logger.error("Metadata retrieval timed out")
             return False, "Metadata retrieval timed out. Please check your database connection status.", None
         except Exception as e:
-            logger.error(f"Failed to retrieve metadata: {str(e)}")
+            logger.error("Failed to retrieve metadata: %s", str(e))
             return False, f"Failed to retrieve metadata: {str(e)}", None
-        finally:
-            if engine:
-                await engine.dispose()
 
     @staticmethod
     def _serialize_metadata(metadata_list: list[TableMetadata]) -> str:
@@ -244,10 +245,9 @@ class MetadataService:
         Returns:
             tuple: (success, error_message, response)
         """
-        logger.info(f"Getting metadata for database: {name}, force_refresh={force_refresh}")
+        logger.info("Getting metadata for database: %s, force_refresh=%s", name, force_refresh)
         session_maker = get_async_session_maker()
         async with session_maker() as session:
-            from sqlalchemy import select
             result = await session.execute(
                 select(DatabaseConnection).where(DatabaseConnection.name == name)
             )
@@ -273,32 +273,10 @@ class MetadataService:
                 # Use cached metadata
                 metadata_list = MetadataService._parse_metadata(conn.metadata_json)
 
-            # Convert to response format (as dicts)
-            tables = [
-                {
-                    "schema_name": table.schema_name,
-                    "table_name": table.table_name,
-                    "table_type": table.table_type,
-                    "comment": table.comment,
-                    "columns": [
-                        {
-                            "name": col.name,
-                            "data_type": col.data_type,
-                            "is_nullable": col.is_nullable,
-                            "default_value": col.default_value,
-                            "is_primary_key": col.is_primary_key,
-                            "comment": col.comment
-                        }
-                        for col in table.columns
-                    ]
-                }
-                for table in metadata_list
-            ]
-
             response = DatabaseDetailResponse(
                 name=conn.name,
                 db_type=conn.db_type,
-                tables=tables,
+                tables=metadata_list,
                 created_at=conn.created_at,
                 last_refreshed_at=conn.last_refreshed_at
             )

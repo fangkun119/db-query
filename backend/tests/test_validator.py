@@ -6,44 +6,43 @@ from app.services.validator import ValidatorService, ValidationError
 
 class TestValidateAndEnrich:
     def test_valid_select_query(self):
-        sql = "SELECT * FROM users"
-        enriched, error = ValidatorService.validate_and_enrich(sql, default_limit=1000)
+        enriched, error, is_truncated = ValidatorService.validate_and_enrich(sql="SELECT * FROM users", default_limit=1000)
 
         assert error is None
+        assert is_truncated is True
         assert "LIMIT 1000" in enriched.upper()
 
     def test_valid_select_with_existing_limit(self):
-        sql = "SELECT * FROM users LIMIT 100"
-        enriched, error = ValidatorService.validate_and_enrich(sql, default_limit=1000)
+        enriched, error, is_truncated = ValidatorService.validate_and_enrich(sql="SELECT * FROM users LIMIT 100", default_limit=1000)
 
         assert error is None
+        assert is_truncated is False
         assert "LIMIT 100" in enriched.upper()
         assert enriched.upper().count("LIMIT") == 1
 
     def test_empty_sql(self):
         with pytest.raises(ValidationError) as exc_info:
-            ValidatorService.validate_and_enrich("", default_limit=1000)
+            ValidatorService.validate_and_enrich(sql="", default_limit=1000)
 
         assert "SQL query cannot be empty" in str(exc_info.value)
 
     def test_whitespace_only_sql(self):
         with pytest.raises(ValidationError) as exc_info:
-            ValidatorService.validate_and_enrich("   \n  ", default_limit=1000)
+            ValidatorService.validate_and_enrich(sql="   \n  ", default_limit=1000)
 
         assert "SQL query cannot be empty" in str(exc_info.value)
 
     def test_multi_statement_rejection(self):
         with pytest.raises(ValidationError) as exc_info:
             ValidatorService.validate_and_enrich(
-                "SELECT * FROM users; DROP TABLE users;",
+                sql="SELECT * FROM users; DROP TABLE users;",
                 default_limit=1000
             )
 
         assert "Only single SQL queries are supported" in str(exc_info.value)
 
     def test_trailing_semicolon_allowed(self):
-        sql = "SELECT * FROM users;"
-        enriched, error = ValidatorService.validate_and_enrich(sql, default_limit=1000)
+        enriched, error, is_truncated = ValidatorService.validate_and_enrich(sql="SELECT * FROM users;", default_limit=1000)
 
         assert error is None
         assert enriched.strip().endswith(";") is False or "LIMIT" in enriched.upper()
@@ -51,7 +50,7 @@ class TestValidateAndEnrich:
     def test_non_select_rejection(self):
         with pytest.raises(ValidationError) as exc_info:
             ValidatorService.validate_and_enrich(
-                "DELETE FROM users",
+                sql="DELETE FROM users",
                 default_limit=1000
             )
 
@@ -60,7 +59,7 @@ class TestValidateAndEnrich:
     def test_insert_rejection(self):
         with pytest.raises(ValidationError) as exc_info:
             ValidatorService.validate_and_enrich(
-                "INSERT INTO users VALUES (1, 'test')",
+                sql="INSERT INTO users VALUES (1, 'test')",
                 default_limit=1000
             )
 
@@ -69,30 +68,27 @@ class TestValidateAndEnrich:
     def test_syntax_error(self):
         with pytest.raises(ValidationError) as exc_info:
             ValidatorService.validate_and_enrich(
-                "SELEC * FROM users",
+                sql="SELEC * FROM users",
                 default_limit=1000
             )
 
         assert "Syntax error" in str(exc_info.value)
 
     def test_union_allowed(self):
-        sql = "SELECT * FROM users UNION SELECT * FROM admins"
-        enriched, error = ValidatorService.validate_and_enrich(sql, default_limit=1000)
+        enriched, error, is_truncated = ValidatorService.validate_and_enrich(sql="SELECT * FROM users UNION SELECT * FROM admins", default_limit=1000)
 
         assert error is None
         assert "LIMIT 1000" in enriched.upper()
 
     def test_complex_query(self):
-        sql = "SELECT id, name FROM users WHERE active = true ORDER BY name"
-        enriched, error = ValidatorService.validate_and_enrich(sql, default_limit=500)
+        enriched, error, is_truncated = ValidatorService.validate_and_enrich(sql="SELECT id, name FROM users WHERE active = true ORDER BY name", default_limit=500)
 
         assert error is None
         assert "LIMIT 500" in enriched.upper()
 
     def test_with_cte_query(self):
         """Test that WITH (CTE) queries are supported."""
-        sql = "WITH cte AS (SELECT * FROM users) SELECT * FROM cte"
-        enriched, error = ValidatorService.validate_and_enrich(sql, default_limit=1000)
+        enriched, error, is_truncated = ValidatorService.validate_and_enrich(sql="WITH cte AS (SELECT * FROM users) SELECT * FROM cte", default_limit=1000)
 
         assert error is None
         assert "LIMIT 1000" in enriched.upper()
@@ -102,7 +98,7 @@ class TestValidateAndEnrich:
         sql = "WITH cte AS (SELECT * FROM users)"
 
         with pytest.raises(ValidationError) as exc_info:
-            ValidatorService.validate_and_enrich(sql, default_limit=1000)
+            ValidatorService.validate_and_enrich(sql=sql, default_limit=1000)
 
         assert "Incomplete WITH/CTE" in str(exc_info.value)
         assert "missing main SELECT" in str(exc_info.value)

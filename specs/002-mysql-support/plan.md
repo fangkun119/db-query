@@ -76,7 +76,7 @@ specs/002-mysql-support/
 backend/app/
 ├── models/
 │   ├── database.py          # DatabaseConnection model (update: add db_type field)
-│   ├── metadata.py          # TableMetadata, ColumnMetadata (no change needed)
+│   ├── metadata.py          # TableMetadata, ColumnMetadata (update: unify with Response models, ordinal_position optional)
 │   └── query.py             # Query request/response models (no change needed)
 ├── db/
 │   └── sqlite.py             # SQLite storage (no change needed)
@@ -85,9 +85,9 @@ backend/app/
 │   ├── metadata.py           # Metadata extraction (update: MySQL queries)
 │   ├── query.py              # Query execution (update: MySQL LIMIT syntax)
 │   ├── nl_to_sql.py          # NL to SQL generation (update: MySQL syntax)
-│   └── validator.py          # SQL validation (no change needed)
+│   └── validator.py          # SQL validation (update: db_type-aware dialect, return is_truncated)
 ├── api/v1/
-│   └── databases.py          # API endpoints (no change needed)
+│   └── databases.py          # API endpoints (update: pass db_type, remove model conversion block)
 └── config.py                  # Settings (update: add MySQL-related env vars)
 
 frontend/src/

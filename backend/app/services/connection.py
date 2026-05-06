@@ -1,5 +1,3 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.pool import NullPool
 from sqlalchemy import select
 from datetime import datetime, timezone
 from typing import Optional
@@ -9,6 +7,7 @@ import logging
 
 from app.db.sqlite import DatabaseConnection, get_async_session_maker, get_engine
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse
+from app.services.db_utils import ephemeral_engine
 
 logger = logging.getLogger(__name__)
 
@@ -40,22 +39,17 @@ class ConnectionService:
         """Test database connection with timeout."""
         test_url = ConnectionService.get_connection_url(url)
 
-        engine = None
         try:
-            engine = create_async_engine(test_url, poolclass=NullPool)
-            async with engine.connect() as conn:
-                # Simple query to test connection
-                await asyncio.wait_for(conn.execute(select(1)), timeout=30)
+            async with ephemeral_engine(test_url) as engine:
+                async with engine.connect() as conn:
+                    await asyncio.wait_for(conn.execute(select(1)), timeout=30)
             return True, ""
         except asyncio.TimeoutError:
-            logger.warning(f"Connection test timed out")
+            logger.warning("Connection test timed out")
             return False, "Database connection timeout. Please check your network or database status."
         except Exception as e:
-            logger.error(f"Connection test failed: {str(e)}")
+            logger.error("Connection test failed: %s", str(e))
             return False, f"Failed to connect to database server: {str(e)}"
-        finally:
-            if engine:
-                await engine.dispose()
 
     @staticmethod
     async def add_connection(name: str, request: CreateConnectionRequest) -> tuple[bool, str, Optional[DatabaseSummaryResponse]]:
@@ -64,7 +58,7 @@ class ConnectionService:
         Returns:
             tuple: (success, error_message, response)
         """
-        logger.info(f"Adding new database connection: {name}")
+        logger.info("Adding new database connection: %s", name)
 
         # Validate URL format
         is_valid, error_msg = ConnectionService._validate_url(request.url)
@@ -107,7 +101,7 @@ class ConnectionService:
                 created_at=conn.created_at,
                 last_refreshed_at=conn.last_refreshed_at
             )
-            logger.info(f"Successfully added database connection: {name}")
+            logger.info("Successfully added database connection: %s", name)
             return True, "", response
 
     @staticmethod
@@ -133,7 +127,7 @@ class ConnectionService:
                             elif table.get("table_type") == "VIEW":
                                 view_count += 1
                     except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to parse metadata JSON for connection '{conn.name}': {e}")
+                        logger.warning("Failed to parse metadata JSON for connection '%s': %s", conn.name, e)
 
                 responses.append(DatabaseSummaryResponse(
                     name=conn.name,
@@ -163,7 +157,7 @@ class ConnectionService:
         Returns:
             tuple: (success, error_message)
         """
-        logger.info(f"Deleting database connection: {name}")
+        logger.info("Deleting database connection: %s", name)
         session_maker = get_async_session_maker()
         async with session_maker() as session:
             result = await session.execute(
@@ -175,7 +169,7 @@ class ConnectionService:
 
             await session.delete(conn)
             await session.commit()
-            logger.info(f"Successfully deleted database connection: {name}")
+            logger.info("Successfully deleted database connection: %s", name)
             return True, ""
 
     @staticmethod

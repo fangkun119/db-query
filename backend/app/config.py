@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from pathlib import Path
 
@@ -11,9 +11,10 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o"
     cors_origins: str = "*"
 
-    class Config:
-        env_file = Path.home() / ".db_query" / "env.properties"
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=Path.home() / ".db_query" / "env.properties",
+        extra="ignore"
+    )
 
 
 @lru_cache

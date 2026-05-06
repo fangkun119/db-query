@@ -10,7 +10,7 @@ class ColumnMetadata(BaseModel):
     data_type: str
     is_nullable: bool
     default_value: Optional[str] = None
-    ordinal_position: int
+    ordinal_position: Optional[int] = None
     is_primary_key: bool = False
     comment: Optional[str] = None
 
@@ -22,25 +22,4 @@ class TableMetadata(BaseModel):
     table_name: str
     table_type: str
     columns: list[ColumnMetadata]
-    comment: Optional[str] = None
-
-
-class ColumnMetadataResponse(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-    name: str
-    data_type: str
-    is_nullable: bool
-    default_value: Optional[str] = None
-    is_primary_key: bool = False
-    comment: Optional[str] = None
-
-
-class TableMetadataResponse(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-    schema_name: str
-    table_name: str
-    table_type: str
-    columns: list[ColumnMetadataResponse]
     comment: Optional[str] = None

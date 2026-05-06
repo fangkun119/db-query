@@ -1,5 +1,6 @@
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, MagicMock
+from contextlib import asynccontextmanager
 
 from app.services.query import QueryService
 from app.models.query import QueryRequest
@@ -53,58 +54,57 @@ class TestExecuteQueryValidation:
 class TestExecuteQueryDatabaseErrors:
     @pytest.mark.asyncio
     async def test_execute_query_database_connection_error(self):
-        from unittest.mock import MagicMock
-        from contextlib import asynccontextmanager
-
         @asynccontextmanager
-        async def mock_async_context_manager():
-            class MockConnection:
-                async def execute(self, query):
-                    raise Exception("Database connection failed")
+        async def mock_ephemeral_engine(url):
+            mock_engine = MagicMock()
 
-            yield MockConnection()
+            @asynccontextmanager
+            async def mock_connect():
+                class MockConnection:
+                    async def execute(self, query):
+                        raise Exception("Database connection failed")
+                yield MockConnection()
 
-        mock_engine = MagicMock()
-        mock_engine.connect.return_value = mock_async_context_manager()
-        mock_engine.dispose = AsyncMock()
+            mock_engine.connect = mock_connect
+            mock_engine.dispose = AsyncMock()
+            yield mock_engine
 
-        with patch("app.services.query.create_async_engine", return_value=mock_engine):
-            result, error = await QueryService.execute_query(
-                "postgresql://localhost/test",
-                QueryRequest(sql="SELECT * FROM users"),
-                default_limit=1000
-            )
+        with patch("app.services.query.ephemeral_engine", side_effect=mock_ephemeral_engine):
+            with patch("app.services.query.ValidatorService.validate_and_enrich", return_value=("SELECT * FROM users LIMIT 1000", None, True)):
+                result, error = await QueryService.execute_query(
+                    "postgresql://localhost/test",
+                    QueryRequest(sql="SELECT * FROM users"),
+                    default_limit=1000
+                )
 
-            assert result is None
-            assert error is not None
-            assert "Query execution failed" in error
+                assert result is None
+                assert error is not None
+                assert "Query execution failed" in error
 
 
 class TestTruncationDetection:
     @pytest.mark.asyncio
     async def test_truncation_detected_when_no_limit(self):
         """Test that truncation is detected when original SQL has no LIMIT."""
-        with patch("app.services.query.ValidatorService.validate_and_enrich") as mock_validate:
-            mock_validate.return_value = ("SELECT * FROM users LIMIT 1000", None)
-
-            # The detection happens in QueryService based on original SQL
-            from unittest.mock import MagicMock
-            from contextlib import asynccontextmanager
-            from sqlalchemy.engine import Result
+        @asynccontextmanager
+        async def mock_ephemeral_engine(url):
+            mock_engine = MagicMock()
 
             @asynccontextmanager
-            async def mock_async_context_manager():
+            async def mock_connect():
                 class MockConnection:
                     async def execute(self, query):
-                        return MagicMock(returns_rows=True, mappings=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[]))))
-
+                        mock_result = MagicMock()
+                        mock_result.mappings.return_value.all.return_value = []
+                        return mock_result
                 yield MockConnection()
 
-            mock_engine = MagicMock()
-            mock_engine.connect.return_value = mock_async_context_manager()
+            mock_engine.connect = mock_connect
             mock_engine.dispose = AsyncMock()
+            yield mock_engine
 
-            with patch("app.services.query.create_async_engine", return_value=mock_engine):
+        with patch("app.services.query.ephemeral_engine", side_effect=mock_ephemeral_engine):
+            with patch("app.services.query.ValidatorService.validate_and_enrich", return_value=("SELECT * FROM users LIMIT 1000", None, True)):
                 result, error = await QueryService.execute_query(
                     "postgresql://localhost/test",
                     QueryRequest(sql="SELECT * FROM users"),
@@ -118,25 +118,25 @@ class TestTruncationDetection:
     @pytest.mark.asyncio
     async def test_no_truncation_when_limit_present(self):
         """Test that no truncation flag when original SQL already has LIMIT."""
-        with patch("app.services.query.ValidatorService.validate_and_enrich") as mock_validate:
-            mock_validate.return_value = ("SELECT * FROM users LIMIT 100", None)
-
-            from unittest.mock import MagicMock
-            from contextlib import asynccontextmanager
+        @asynccontextmanager
+        async def mock_ephemeral_engine(url):
+            mock_engine = MagicMock()
 
             @asynccontextmanager
-            async def mock_async_context_manager():
+            async def mock_connect():
                 class MockConnection:
                     async def execute(self, query):
-                        return MagicMock(returns_rows=True, mappings=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[]))))
-
+                        mock_result = MagicMock()
+                        mock_result.mappings.return_value.all.return_value = []
+                        return mock_result
                 yield MockConnection()
 
-            mock_engine = MagicMock()
-            mock_engine.connect.return_value = mock_async_context_manager()
+            mock_engine.connect = mock_connect
             mock_engine.dispose = AsyncMock()
+            yield mock_engine
 
-            with patch("app.services.query.create_async_engine", return_value=mock_engine):
+        with patch("app.services.query.ephemeral_engine", side_effect=mock_ephemeral_engine):
+            with patch("app.services.query.ValidatorService.validate_and_enrich", return_value=("SELECT * FROM users LIMIT 100", None, False)):
                 result, error = await QueryService.execute_query(
                     "postgresql://localhost/test",
                     QueryRequest(sql="SELECT * FROM users LIMIT 100"),

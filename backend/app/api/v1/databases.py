@@ -1,9 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from typing import Any
 
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse, DatabaseDetailResponse
 from app.models.query import QueryRequest, QueryResultResponse, NaturalQueryRequest, NLQueryResponse
-from app.models.metadata import TableMetadata, ColumnMetadata, TableMetadataResponse, ColumnMetadataResponse
 from app.services.connection import ConnectionService
 from app.services.metadata import MetadataService
 from app.services.query import QueryService
@@ -89,10 +87,9 @@ async def execute_query(name: str, request: QueryRequest) -> QueryResultResponse
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database connection does not exist")
 
     # Execute query
-    result, error_msg = await QueryService.execute_query(connection.url, request)
+    result, error_msg = await QueryService.execute_query(connection.url, request, db_type=connection.db_type)
 
     if error_msg:
-        # Determine appropriate status code
         if "Only SELECT" in error_msg or "Syntax error" in error_msg:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=error_msg)
@@ -130,33 +127,10 @@ async def natural_query(
     if not connection:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Database connection does not exist")
 
-    # Convert TableMetadataResponse to TableMetadata objects
-    tables = [
-        TableMetadata(
-            schema_name=t.schema_name,
-            table_name=t.table_name,
-            table_type=t.table_type,
-            columns=[
-                ColumnMetadata(
-                    name=c.name,
-                    data_type=c.data_type,
-                    is_nullable=c.is_nullable,
-                    default_value=c.default_value,
-                    ordinal_position=0,
-                    is_primary_key=c.is_primary_key,
-                    comment=c.comment
-                )
-                for c in t.columns
-            ],
-            comment=t.comment
-        )
-        for t in db_detail.tables
-    ]
-
     # Generate SQL using OpenAI
     success, error_msg, result = await NLToSQLService.generate_sql(
         question=request.prompt,
-        tables=tables,
+        tables=db_detail.tables,
         settings=settings,
         db_type=connection.db_type
     )
