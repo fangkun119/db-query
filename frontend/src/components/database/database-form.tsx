@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, message, Space, Typography } from 'antd';
+import { Modal, Form, Input, message, Space, Typography, Radio } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { CreateConnectionRequest } from '../../types';
+import type { DatabaseType } from '../../types';
 import { addDb } from '../../services/api';
 import { handleApiError } from '../../utils/errors';
 
@@ -13,9 +14,25 @@ interface DatabaseFormProps {
   onSuccess: () => void;
 }
 
+const URL_PATTERNS: Record<DatabaseType, RegExp> = {
+  postgresql: /^postgresql:\/\/|^postgresql\+asyncpg:\/\//,
+  mysql: /^mysql:\/\//,
+};
+
+const URL_FORMATS: Record<DatabaseType, string> = {
+  postgresql: 'postgresql://username:password@host:port/database',
+  mysql: 'mysql://username:password@host:port/database',
+};
+
+const URL_PLACEHOLDERS: Record<DatabaseType, string> = {
+  postgresql: 'postgresql://user:password@localhost:5432/mydb',
+  mysql: 'mysql://user:password@localhost:3306/mydb',
+};
+
 export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [dbType, setDbType] = useState<DatabaseType>('postgresql');
 
   const handleSubmit = async () => {
     try {
@@ -81,23 +98,42 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
         </Form.Item>
 
         <Form.Item
-          label="PostgreSQL Connection URL"
+          label="Database Type"
+          name="dbType"
+          initialValue="postgresql"
+        >
+          <Radio.Group
+            value={dbType}
+            onChange={(e) => {
+              setDbType(e.target.value);
+              form.setFieldValue('url', '');
+            }}
+            optionType="button"
+            buttonStyle="solid"
+          >
+            <Radio.Button value="postgresql">PostgreSQL</Radio.Button>
+            <Radio.Button value="mysql">MySQL</Radio.Button>
+          </Radio.Group>
+        </Form.Item>
+
+        <Form.Item
+          label="Database Connection URL"
           name="url"
           rules={[
-            { required: true, message: 'Please enter PostgreSQL connection URL' },
+            { required: true, message: `Please enter ${dbType} connection URL` },
             {
-              pattern: /^postgresql:\/\/|^postgresql\+asyncpg:\/\//,
-              message: 'URL must start with postgresql:// or postgresql+asyncpg://'
+              pattern: URL_PATTERNS[dbType],
+              message: `URL must start with ${dbType}://`
             },
           ]}
           extra={
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              Format: postgresql://username:password@host:port/database
+              Format: {URL_FORMATS[dbType]}
             </Text>
           }
         >
           <Input.Password
-            placeholder="postgresql://user:password@localhost:5432/mydb"
+            placeholder={URL_PLACEHOLDERS[dbType]}
             autoComplete="off"
           />
         </Form.Item>
@@ -111,6 +147,7 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({ open, onClose, onSuc
               <li>Database metadata will be automatically fetched after successful connection</li>
               <li>Ensure the database service is accessible</li>
               <li>Connection information will be stored locally in plain text</li>
+              <li>{dbType === 'postgresql' ? 'Default PostgreSQL port: 5432' : 'Default MySQL port: 3306'}</li>
             </ul>
           </Space>
         </Form.Item>

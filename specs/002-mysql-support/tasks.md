@@ -101,6 +101,15 @@ This phase combines:
 - [X] T031 [P] [US2] Test query results display MySQL data correctly (number formatting, date formatting, etc.)
 - [X] T030a [P] [US1] Verify schema tree tooltip displays table and column comments for both PostgreSQL and MySQL databases (frontend/src/components/schema/schema-tree.tsx)
 
+#### Database Connection Form (US1) - [CRITICAL BUG FIX - MISSING]
+
+- [X] T051 [CRITICAL] [US1] Update `DatabaseForm` component in `frontend/src/components/database/database-form.tsx` to support MySQL URL input:
+  - Change label from "PostgreSQL Connection URL" to "Database Connection URL"
+  - Add database type selector (Radio/Select) with PostgreSQL/MySQL options
+  - Update URL validation pattern to accept both `postgresql://` and `mysql://` schemes based on selected type
+  - Update hint text to show correct format for selected database type
+  - Add MySQL placeholder URL example
+
 ### Testing Tasks
 
 #### REST Client Tests
@@ -129,7 +138,7 @@ This phase combines:
 **Goal**: Ensure all functionality works correctly and documentation is complete.
 
 ### Independent Test Criteria
-- ✅ All 41 implementation tasks are complete
+- ✅ All 42 implementation tasks are complete (added T051 for MySQL UI)
 - ✅ MySQL database can be added and queried
 - ✅ PostgreSQL functionality unchanged
 - ✅ All tests pass
@@ -143,10 +152,56 @@ This phase combines:
 - [X] T045 Perform manual E2E testing: add MySQL DB, query with MySQL SQL, test NL to SQL
 - [X] T046 Verify database type badge displays correctly in frontend UI
 - [X] T046a Verify schema tree tooltip displays table and column comments when hovering over table and column names
+- [X] T052 [NEW] Test MySQL database form: select MySQL type, enter mysql:// URL, verify connection works
 - [X] T047 Test error handling: invalid URL, connection failure, SQL syntax error
 - [X] T048 Clean up any test data created during development
 - [X] T049 Update constitution to v1.1.0 to officially add MySQL support
 - [X] T050 Create pull request with description of MySQL support implementation
+
+---
+
+## Phase 4: Code Quality Refactoring (OPTIONAL)
+
+**Goal**: Address frontend code smells and improve maintainability.
+
+### Independent Test Criteria
+- ✅ God component decomposed into smaller, testable pieces
+- ✅ Inline styles extracted to shared constants
+- ✅ Magic numbers replaced with named constants
+- ✅ All tests still pass after refactoring
+
+### Tasks
+
+#### Critical Refactoring
+
+- [X] T060 [CRITICAL] Extract `useWorkspaceState` custom hook from `database-workspace.tsx` (45-60: 13 state variables, async operations)
+- [X] T061 [CRITICAL] Extract `useResizablePanel` custom hook from `database-workspace.tsx` (267-306: resize logic)
+- [X] T062 [CRITICAL] Create `ErrorSqlModal` component to eliminate tripled modal JSX in `database-workspace.tsx` (159-210, 229-255)
+- [X] T063 [CRITICAL] Create shared `styles.ts` or `theme.ts` with CSS variables/constants (eliminates 40+ inline style objects)
+- [X] T064 [CRITICAL] Extract presentational column components (Sidebar, SchemaBrowser, QueryPanel) from `database-workspace.tsx`
+
+#### High Priority Refactoring
+
+- [X] T070 [HIGH] Replace `as any` type assertion in `result-table.tsx:136` with correct type
+- [X] T071 [HIGH] Extract magic numbers to constants: `MAX_DISPLAYED_ROWS = 1000`, `TABLE_BODY_PADDING = 16`, `MIN_TABLE_HEIGHT = 200`, `PAGE_SIZE = 50`
+- [X] T072 [HIGH] Fix `errors.ts` to use `axios.isAxiosError` instead of manual type guard
+- [X] T073 [HIGH] Fix `NLInput` dual state pattern - make it fully controlled or remove parent state
+- [X] T074 [HIGH] Move inline `<style>` tag from `sql-editor.tsx:77-87` to `index.css`
+
+#### Medium Priority Refactoring
+
+- [X] T080 [MEDIUM] Create `SchemaBadge` component for repeated badge styles in `schema-tree.tsx`
+- [X] T081 [MEDIUM] Replace imperative DOM hover with CSS or state in `database-list.tsx` (Kept imperative hover as CSS approach less clear)
+- [X] T082 [MEDIUM] Wrap `filteredTables` computation in `useMemo` in `database-workspace.tsx` (Moved to useWorkspaceState hook)
+- [X] T083 [MEDIUM] Fix `dbTypeText` type to use `Record<DatabaseType, string>` with `satisfies`
+- [X] T084 [MEDIUM] Delete unused `App.css` (185 lines of Vite scaffold)
+
+#### Low Priority Refactoring
+
+- [X] T090 [LOW] Remove duplicate CSS selectors in `index.css:25-41`
+- [X] T091 [LOW] Move `Column` component to shared layout module
+- [X] T092 [LOW] Remove ESLint disable comment and refactor effect in `database-workspace.tsx` (Refactored into hooks)
+- [X] T093 [LOW] Add React Error Boundary to `main.tsx`
 
 ---
 

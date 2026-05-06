@@ -74,17 +74,6 @@ Click "Execute Query" button or press "Ctrl / CMD + Enter" to run.`,
             },
           }}
         />
-        <style>{`
-          .sql-editor-container > div {
-            border-radius: 6px !important;
-          }
-          .sql-editor-container .monaco-editor {
-            border-radius: 6px !important;
-          }
-          .sql-editor-container .monaco-editor .overflow-guard {
-            border-radius: 6px !important;
-          }
-        `}</style>
       </div>
     </div>
   );

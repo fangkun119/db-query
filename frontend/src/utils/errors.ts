@@ -1,15 +1,8 @@
-interface ApiError {
-  response?: {
-    data?: {
-      detail?: string;
-    };
-  };
-}
+import axios from 'axios';
 
 export function getApiErrorMessage(error: unknown): string {
-  if (error && typeof error === 'object' && 'response' in error) {
-    const err = error as ApiError;
-    return err.response?.data?.detail || 'Unknown error';
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.detail ?? 'Unknown error';
   }
   return 'Unknown error';
 }

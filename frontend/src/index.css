@@ -8,7 +8,6 @@
   font-family: sans-serif;
 }
 
-
 /* Schema search input border color */
 .schema-search-input,
 .schema-search-input:hover,
@@ -21,12 +20,18 @@
   box-shadow: 0 0 0 2px rgba(206, 212, 218, 0.2) !important;
 }
 
+/* SQL Editor border radius */
+.sql-editor-container > div {
+  border-radius: 6px !important;
+}
+.sql-editor-container .monaco-editor {
+  border-radius: 6px !important;
+}
+.sql-editor-container .monaco-editor .overflow-guard {
+  border-radius: 6px !important;
+}
+
 /* Global title color - dark gray #1E1E1E */
-.ant-typography h1,
-.ant-typography h2,
-.ant-typography h3,
-.ant-typography h4,
-.ant-typography h5,
 .ant-typography h1,
 .ant-typography h2,
 .ant-typography h3,

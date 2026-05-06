@@ -252,7 +252,7 @@ describe('DatabaseForm', () => {
         />
       )
 
-      expect(screen.getByText(/PostgreSQL Connection URL/i)).toBeInTheDocument()
+      expect(screen.getByText(/Database Connection URL/i)).toBeInTheDocument()
     })
   })
 })

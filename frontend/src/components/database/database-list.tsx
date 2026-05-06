@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Typography, Popconfirm } from 'antd';
 import { DeleteOutlined, DatabaseOutlined } from '@ant-design/icons';
-import type { DatabaseSummary } from '../../types';
+import type { DatabaseSummary, DatabaseType } from '../../types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/en';
@@ -18,10 +18,10 @@ interface DatabaseListProps {
   onClick: (name: string) => void;
 }
 
-const dbTypeText: Record<string, string> = {
+const dbTypeText = {
   postgresql: 'PostgreSQL',
   mysql: 'MySQL',
-};
+} satisfies Record<DatabaseType, string>;
 
 export const DatabaseList: React.FC<DatabaseListProps> = ({ databases, selectedName, onDelete, onClick }) => {
   const handleDelete = (name: string, e: React.MouseEvent) => {
