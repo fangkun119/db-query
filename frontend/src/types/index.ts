@@ -1,3 +1,5 @@
+export type DatabaseType = "postgresql" | "mysql";
+
 export interface ColumnMeta {
   name: string;
   dataType: string;
@@ -17,8 +19,7 @@ export interface TableMeta {
 
 export interface DatabaseSummary {
   name: string;
-  dbType: string;
-  status: string;
+  dbType: DatabaseType;
   tableCount: number;
   viewCount: number;
   createdAt: string;
@@ -27,8 +28,7 @@ export interface DatabaseSummary {
 
 export interface DatabaseDetail {
   name: string;
-  dbType: string;
-  status: string;
+  dbType: DatabaseType;
   tables: TableMeta[];
   createdAt: string;
   lastRefreshedAt?: string;

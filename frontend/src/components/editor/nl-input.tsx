@@ -1,26 +1,23 @@
-import React, { useState } from 'react';
-import { Input, Alert } from 'antd';
+import React from 'react';
+import { Input } from 'antd';
 
 const { TextArea } = Input;
 
 interface NLInputProps {
-  onGenerate: (prompt: string) => void;
+  value: string;
+  onChange: (value: string) => void;
   onExecute: () => void;
   loading?: boolean;
 }
 
 export const NLInput: React.FC<NLInputProps> = ({
-  onGenerate,
+  value,
+  onChange,
   onExecute,
   loading = false,
 }) => {
-  const [prompt, setPrompt] = useState('');
-
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setPrompt(value);
-    // Immediately notify parent of changes
-    onGenerate(value);
+    onChange(e.target.value);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -34,7 +31,7 @@ export const NLInput: React.FC<NLInputProps> = ({
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <TextArea
-        value={prompt}
+        value={value}
         onChange={handleChange}
         onKeyDown={handleKeyPress}
         placeholder="

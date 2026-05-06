@@ -2,6 +2,9 @@ import React from 'react';
 import Editor from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 
+// Declare monaco global variable for type checking
+declare const monaco: typeof import('monaco-editor');
+
 interface SqlEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -71,17 +74,6 @@ Click "Execute Query" button or press "Ctrl / CMD + Enter" to run.`,
             },
           }}
         />
-        <style>{`
-          .sql-editor-container > div {
-            border-radius: 6px !important;
-          }
-          .sql-editor-container .monaco-editor {
-            border-radius: 6px !important;
-          }
-          .sql-editor-container .monaco-editor .overflow-guard {
-            border-radius: 6px !important;
-          }
-        `}</style>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Table, Alert, Typography } from 'antd';
 import type { QueryResult } from '../../types';
+import type { TablePaginationConfig } from 'antd';
+import { RESULT_TABLE_CONSTANTS } from './result-table.constants';
 
 const { Text } = Typography;
 
@@ -29,12 +31,15 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
       const pagination = wrapper.querySelector('.ant-pagination');
 
       // Calculate actual heights
-      const headerHeight = tableHeader ? tableHeader.clientHeight : 40;
-      const paginationHeight = pagination ? pagination.clientHeight : 55;
+      const headerHeight = tableHeader ? tableHeader.clientHeight : RESULT_TABLE_CONSTANTS.DEFAULT_TABLE_HEADER_HEIGHT;
+      const paginationHeight = pagination ? pagination.clientHeight : RESULT_TABLE_CONSTANTS.DEFAULT_PAGINATION_HEIGHT;
 
       // Calculate available height for table body (tbody)
       // Reserve space for header and pagination
-      const scrollY = Math.max(wrapperHeight - headerHeight - paginationHeight - 16, 200); // 16px for internal margins, min 200px
+      const scrollY = Math.max(
+        wrapperHeight - headerHeight - paginationHeight - RESULT_TABLE_CONSTANTS.TABLE_BODY_PADDING,
+        RESULT_TABLE_CONSTANTS.MIN_TABLE_BODY_HEIGHT
+      );
 
       setTableScrollY(scrollY);
     };
@@ -113,8 +118,8 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Truncation warning - only show if rows exceed 1000 */}
-      {result.isTruncated && result.totalCount >= 1000 && (
+      {/* Truncation warning - only show if rows exceed MAX_DISPLAYED_ROWS */}
+      {result.isTruncated && result.totalCount >= RESULT_TABLE_CONSTANTS.MAX_DISPLAYED_ROWS && (
         <Alert
           message={`Max ${result.totalCount} rows displayed (LIMIT automatically set)`}
           type="warning"
@@ -129,11 +134,11 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
           columns={columns}
           dataSource={dataSource}
           pagination={{
-            pageSize: 50,
+            pageSize: RESULT_TABLE_CONSTANTS.DEFAULT_PAGE_SIZE,
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} row${total !== 1 ? 's' : ''}`,
             size: 'small',
-            position: 'bottom',
+            position: ['bottom'] as TablePaginationConfig['position'],
           }}
           size="small"
           scroll={{ x: 'max-content', y: tableScrollY }}

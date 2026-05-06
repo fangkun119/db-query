@@ -12,23 +12,37 @@ class ValidationError(Exception):
         super().__init__(message)
 
 
+# sqlglot dialect names for supported database types
+DIALECT_MAP = {
+    "postgresql": "postgres",
+    "mysql": "mysql",
+}
+
+
 class ValidatorService:
     """Service for validating and enriching SQL queries."""
 
     @staticmethod
-    def validate_and_enrich(sql: str, default_limit: int = 1000) -> tuple[str, str | None]:
+    def validate_and_enrich(
+        sql: str,
+        default_limit: int = 1000,
+        db_type: str = "postgresql"
+    ) -> tuple[str, str | None, bool]:
         """Validate and enrich SQL query.
 
         Args:
             sql: The SQL query to validate
             default_limit: Default LIMIT to inject if missing
+            db_type: Database type for dialect-specific parsing
 
         Returns:
-            Tuple of (enriched_sql, error_message)
+            Tuple of (enriched_sql, error_message, is_truncated)
 
         Raises:
             ValidationError: If validation fails
         """
+        dialect = DIALECT_MAP.get(db_type, "postgres")
+
         # Guard against empty/whitespace input
         if not sql or not sql.strip():
             raise ValidationError("SQL query cannot be empty")
@@ -38,21 +52,36 @@ class ValidatorService:
         if ";" in stripped[:-1]:  # Allow trailing semicolon
             raise ValidationError("Only single SQL queries are supported")
 
+        # Check for incomplete WITH/CTE queries (WITH without main SELECT)
+        if stripped.upper().startswith("WITH"):
+            paren_count = 0
+            last_paren_pos = -1
+            for i, char in enumerate(stripped):
+                if char == '(':
+                    paren_count += 1
+                elif char == ')':
+                    paren_count -= 1
+                    if paren_count == 0:
+                        last_paren_pos = i
+
+            if last_paren_pos > 0:
+                after_cte = stripped[last_paren_pos + 1:].strip().upper()
+                if not after_cte.startswith("SELECT"):
+                    raise ValidationError("Incomplete WITH/CTE query: missing main SELECT statement after CTE definition. Example: WITH cte AS (...) SELECT * FROM cte")
+
         # Remove trailing semicolon if present
         if stripped.endswith(";"):
             sql = sql[:-1].strip()
             stripped = sql.strip()
 
         try:
-            ast = parse_one(stripped, dialect="postgres")
+            ast = parse_one(stripped, dialect=dialect)
         except ParseError as e:
-            # Extract error details from ParseError
             error_details = e.errors[0] if e.errors else {}
             line = error_details.get("line", "unknown")
             col = error_details.get("col", "unknown")
             desc = error_details.get("description", str(e))
 
-            # Clean up error message
             clean_desc = desc.replace("Expected ", "").replace(" was expected", "")
             message = f"Syntax error (line {line}, column {col}): {clean_desc}"
             raise ValidationError(message)
@@ -70,19 +99,19 @@ class ValidatorService:
             is_truncated = False
 
         # Generate SQL from modified AST
-        enriched_sql = ast.sql(dialect="postgres")
+        enriched_sql = ast.sql(dialect=dialect)
 
-        return enriched_sql, None
+        return enriched_sql, None, is_truncated
 
     @staticmethod
-    def validate_for_nl_generated(sql: str) -> tuple[bool, str | None]:
+    def validate_for_nl_generated(sql: str, db_type: str = "postgresql") -> tuple[bool, str | None]:
         """Validate AI-generated SQL before inserting into editor.
 
         This is a lighter validation used for NL→SQL generated code.
         Returns (is_valid, error_message).
         """
         try:
-            enriched_sql, _ = ValidatorService.validate_and_enrich(sql, default_limit=0)
+            _, _, _ = ValidatorService.validate_and_enrich(sql, default_limit=0, db_type=db_type)
             return True, None
         except ValidationError as e:
             return False, e.message

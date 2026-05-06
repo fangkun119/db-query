@@ -3,6 +3,7 @@ import { Tree, Typography, Tooltip } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { TableOutlined } from '@ant-design/icons';
 import type { TableMeta } from '../../types';
+import { SchemaBadge } from './SchemaBadge';
 
 const { Text } = Typography;
 
@@ -36,41 +37,9 @@ export const SchemaTree: React.FC<SchemaTreeProps> = ({ tables, loading = false 
               <Tooltip title={col.comment} mouseEnterDelay={0.3}>
                 <Text strong style={{ fontSize: '13px', fontFamily: 'sans-serif' }}>{col.name}</Text>
               </Tooltip>
-              <span style={{
-                fontSize: '9px',
-                fontWeight: 'bold',
-                padding: '2px 6px',
-                border: '1px solid #333333',
-                backgroundColor: '#ffffff',
-                borderRadius: '2px',
-                fontFamily: 'sans-serif'
-              }}>
-                {col.dataType.toUpperCase()}
-              </span>
-              {col.isPrimaryKey && (
-                <span style={{
-                  fontSize: '9px',
-                  fontWeight: 'bold',
-                  padding: '2px 6px',
-                  backgroundColor: '#FFE6E6',
-                  borderRadius: '2px',
-                  fontFamily: 'sans-serif'
-                }}>
-                  PK
-                </span>
-              )}
-              {!col.isNullable && (
-                <span style={{
-                  fontSize: '9px',
-                  fontWeight: 'bold',
-                  padding: '2px 6px',
-                  backgroundColor: '#f0e6fa',
-                  borderRadius: '2px',
-                  fontFamily: 'sans-serif'
-                }}>
-                  NOT NULL
-                </span>
-              )}
+              <SchemaBadge variant="type" label={col.dataType.toUpperCase()} />
+              {col.isPrimaryKey && <SchemaBadge variant="pk" label="PK" />}
+              {!col.isNullable && <SchemaBadge variant="nullable" label="NOT NULL" />}
             </div>
           ),
           isLeaf: true,
@@ -83,17 +52,7 @@ export const SchemaTree: React.FC<SchemaTreeProps> = ({ tables, loading = false 
               <Tooltip title={table.comment} mouseEnterDelay={0.3}>
                 <Text strong style={{ fontSize: '13px', fontFamily: 'sans-serif' }}>{table.tableName}</Text>
               </Tooltip>
-              <span style={{
-                fontSize: '9px',
-                fontWeight: 'bold',
-                padding: '2px 6px',
-                backgroundColor: '#F8F8F8',
-                color: '#333333',
-                borderRadius: '2px',
-                fontFamily: 'sans-serif'
-              }}>
-                {isView ? 'VIEW' : 'TABLE'}
-              </span>
+              <SchemaBadge variant="table-kind" label={isView ? 'VIEW' : 'TABLE'} />
             </div>
           ),
           children: columnNodes,

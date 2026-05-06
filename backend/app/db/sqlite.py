@@ -18,7 +18,6 @@ class DatabaseConnection(Base):
     url: Mapped[str] = mapped_column(Text, nullable=False)
     db_type: Mapped[str] = mapped_column(String(50), nullable=False, default="postgresql")
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     last_refreshed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

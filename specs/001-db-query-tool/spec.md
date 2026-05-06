@@ -97,7 +97,7 @@ As a data analyst, I want to describe my data question in plain language, so tha
 - **FR-004**: System MUST allow users to delete stored database connections
 - **FR-005**: System MUST automatically fetch and cache database metadata when a connection is first added
 - **FR-006**: System MUST provide a manual refresh button to re-fetch metadata for an existing connection
-- **FR-007**: System MUST display connection status (connected/disconnected/error) for each stored connection; status is checked on-use (when user queries or views metadata) rather than via background polling, with a reconnect prompt on failure
+- **FR-007**: System MUST display database type for each stored connection
 - **FR-008**: System MUST timeout database connection attempts after 30 seconds
 
 #### Metadata Discovery and Display
@@ -154,7 +154,7 @@ As a data analyst, I want to describe my data question in plain language, so tha
 
 ### Key Entities
 
-- **Database Connection**: Represents a connection to a user's database. Attributes: connection ID, connection URL (stored in plain text in local SQLite for demo phase), database type, name (user-provided label), metadata (cached schema), status, created timestamp, last refreshed timestamp.
+- **Database Connection**: Represents a connection to a user's database. Attributes: connection ID, connection URL (stored in plain text in local SQLite for demo phase), database type, name (user-provided label), metadata (cached schema), created timestamp, last refreshed timestamp.
 
 - **Table/View Metadata**: Represents a database table or view. Attributes: name, type (table/view), schema name, columns.
 

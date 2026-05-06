@@ -95,7 +95,6 @@ class TestDatabaseConnection:
             name="test-db",
             url="postgresql://user:pass@localhost/db",
             db_type="postgresql",
-            status="active",
             created_at=datetime.now(timezone.utc),
         )
 
@@ -104,7 +103,7 @@ class TestDatabaseConnection:
 
         assert conn.name == "test-db"
         assert conn.url == "postgresql://user:pass@localhost/db"
-        assert conn.status == "active"
+        assert conn.db_type == "postgresql"
 
     @pytest.mark.asyncio
     async def test_connection_with_metadata(self, async_session: AsyncSession):
@@ -128,7 +127,6 @@ class TestDatabaseConnection:
             url="postgresql://localhost/db",
             db_type="postgresql",
             metadata_json=json.dumps(metadata),
-            status="active",
             created_at=datetime.now(timezone.utc),
         )
 
@@ -157,7 +155,6 @@ class TestDatabaseConnection:
         await async_session.commit()
 
         assert conn.db_type == "postgresql"
-        assert conn.status == "active"
         assert conn.created_at is not None
         assert conn.metadata_json is None
 

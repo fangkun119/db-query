@@ -120,10 +120,10 @@ ORDER BY name
 
 
 class TestBuildSchemaDDL:
-    """Test building DDL from schema metadata."""
+    """Test building compact DDL from schema metadata."""
 
     def test_build_simple_table_ddl(self):
-        """Test building DDL for simple table."""
+        """Test building compact DDL for simple table."""
         tables = [
             TableMetadata(
                 schema_name="public",
@@ -155,14 +155,15 @@ class TestBuildSchemaDDL:
 
         ddl = NLToSQLService._build_schema_ddl(tables)
 
-        assert "CREATE TABLE public.users" in ddl
-        assert "id integer NOT NULL PRIMARY KEY" in ddl
+        # Compact format: -- users\nusers(\n  id integer\n  name varchar -- User name\n)
+        assert "-- users" in ddl
+        assert "users(" in ddl
+        assert "id integer" in ddl
         assert "name varchar" in ddl
         assert "-- User name" in ddl
-        assert ddl.endswith(";")
 
     def test_build_ddl_with_comments(self):
-        """Test building DDL with table and column comments."""
+        """Test building compact DDL with table and column comments."""
         tables = [
             TableMetadata(
                 schema_name="public",
@@ -185,11 +186,12 @@ class TestBuildSchemaDDL:
 
         ddl = NLToSQLService._build_schema_ddl(tables)
 
+        # Compact format: -- users: User accounts\nusers(\n  id integer -- User ID\n)
         assert "-- User ID" in ddl
-        assert "-- User accounts" in ddl
+        assert "-- users: User accounts" in ddl
 
     def test_build_ddl_with_default_values(self):
-        """Test building DDL with default values."""
+        """Test building compact DDL - default values are stripped."""
         tables = [
             TableMetadata(
                 schema_name="public",
@@ -212,10 +214,12 @@ class TestBuildSchemaDDL:
 
         ddl = NLToSQLService._build_schema_ddl(tables)
 
-        assert "DEFAULT 0.00" in ddl
+        # Compact format strips DEFAULT values to reduce token usage
+        assert "price numeric" in ddl
+        assert "DEFAULT" not in ddl  # Default values are stripped
 
     def test_build_multiple_tables_ddl(self):
-        """Test building DDL for multiple tables."""
+        """Test building compact DDL for multiple tables."""
         tables = [
             TableMetadata(
                 schema_name="public",
@@ -255,9 +259,12 @@ class TestBuildSchemaDDL:
 
         ddl = NLToSQLService._build_schema_ddl(tables)
 
-        assert "CREATE TABLE public.users" in ddl
-        assert "CREATE TABLE public.orders" in ddl
-        assert ddl.count("CREATE TABLE") == 2
+        # Compact format: -- users\nusers(\n  id integer\n)\n\n-- orders\norders(\n  id integer\n)
+        assert "-- users" in ddl
+        assert "-- orders" in ddl
+        assert "users(" in ddl
+        assert "orders(" in ddl
+        assert ddl.count("(") == 2  # Two tables defined
 
 
 class TestBuildSystemPrompt:
@@ -269,7 +276,7 @@ class TestBuildSystemPrompt:
 
         prompt = NLToSQLService._build_system_prompt(schema_ddl)
 
-        assert "professional PostgreSQL SQL generation assistant" in prompt
+        assert "expert PostgreSQL SQL generation assistant" in prompt
         assert schema_ddl in prompt
         assert "Only generate SELECT" in prompt
         assert "Do NOT add LIMIT" in prompt
@@ -434,6 +441,8 @@ class TestGenerateSQL:
 
             assert success is False
             assert "validation failed" in error_msg.lower()
+            assert "Generated SQL:" in error_msg
+            assert "SELECT * FROM invalid_table" in error_msg
             assert result is None
 
 

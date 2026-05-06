@@ -17,16 +17,11 @@
   "dependencies": {
     "@ant-design/icons": "^6.2.2",
     "@monaco-editor/react": "^4.7.0",
-    "@refinedev/antd": "^6.0.3",
-    "@refinedev/core": "^5.0.12",
-    "@refinedev/react-router": "^2.0.4",
-    "@tailwindcss/vite": "^4.2.4",
     "antd": "^6.3.7",
     "axios": "^1.15.2",
     "dayjs": "^1.11.20",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-router": "^7.14.2"
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

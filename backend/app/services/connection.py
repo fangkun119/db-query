@@ -1,5 +1,3 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.pool import NullPool
 from sqlalchemy import select
 from datetime import datetime, timezone
 from typing import Optional
@@ -9,6 +7,8 @@ import logging
 
 from app.db.sqlite import DatabaseConnection, get_async_session_maker, get_engine
 from app.models.database import CreateConnectionRequest, DatabaseSummaryResponse
+from app.services.db_utils import ephemeral_engine
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,37 +17,40 @@ class ConnectionService:
     """Service for managing database connections."""
 
     @staticmethod
+    def _detect_db_type(url: str) -> str:
+        """Detect database type from URL scheme."""
+        url_lower = url.lower()
+        if url_lower.startswith("mysql://") or url_lower.startswith("mysql+"):
+            return "mysql"
+        if url_lower.startswith("postgresql://") or url_lower.startswith("postgresql+"):
+            return "postgresql"
+        return "postgresql"  # Default fallback
+
+    @staticmethod
     def _validate_url(url: str) -> tuple[bool, str]:
-        """Validate PostgreSQL connection URL."""
-        if not url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
-            return False, "Only PostgreSQL connections are supported. URL must start with postgresql:// or postgresql+asyncpg://"
+        """Validate database connection URL."""
+        url_lower = url.lower()
+        if not (url_lower.startswith("postgresql://") or url_lower.startswith("postgresql+asyncpg://") or
+                url_lower.startswith("mysql://") or url_lower.startswith("mysql+aiomysql://")):
+            return False, "Only PostgreSQL and MySQL connections are supported. URL must start with postgresql:// or mysql://"
         return True, ""
 
     @staticmethod
     async def _test_connection(url: str) -> tuple[bool, str]:
         """Test database connection with timeout."""
-        # Ensure URL uses asyncpg driver
-        if url.startswith("postgresql://"):
-            test_url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        else:
-            test_url = url
+        test_url = ConnectionService.get_connection_url(url)
 
-        engine = None
         try:
-            engine = create_async_engine(test_url, poolclass=NullPool)
-            async with engine.connect() as conn:
-                # Simple query to test connection
-                await asyncio.wait_for(conn.execute(select(1)), timeout=30)
+            async with ephemeral_engine(test_url) as engine:
+                async with engine.connect() as conn:
+                    await asyncio.wait_for(conn.execute(select(1)), timeout=get_settings().db_operation_timeout)
             return True, ""
         except asyncio.TimeoutError:
-            logger.warning(f"Connection test timed out")
+            logger.warning("Connection test timed out")
             return False, "Database connection timeout. Please check your network or database status."
         except Exception as e:
-            logger.error(f"Connection test failed: {str(e)}")
+            logger.error("Connection test failed: %s", str(e))
             return False, f"Failed to connect to database server: {str(e)}"
-        finally:
-            if engine:
-                await engine.dispose()
 
     @staticmethod
     async def add_connection(name: str, request: CreateConnectionRequest) -> tuple[bool, str, Optional[DatabaseSummaryResponse]]:
@@ -56,7 +59,7 @@ class ConnectionService:
         Returns:
             tuple: (success, error_message, response)
         """
-        logger.info(f"Adding new database connection: {name}")
+        logger.info("Adding new database connection: %s", name)
 
         # Validate URL format
         is_valid, error_msg = ConnectionService._validate_url(request.url)
@@ -80,11 +83,11 @@ class ConnectionService:
                 return False, f"Connection name '{name}' already exists", None
 
             # Create new connection
+            detected_db_type = ConnectionService._detect_db_type(request.url)
             conn = DatabaseConnection(
                 name=name,
                 url=request.url,
-                db_type="postgresql",
-                status="active",
+                db_type=detected_db_type,
                 created_at=datetime.now(timezone.utc)
             )
             session.add(conn)
@@ -94,13 +97,12 @@ class ConnectionService:
             response = DatabaseSummaryResponse(
                 name=conn.name,
                 db_type=conn.db_type,
-                status=conn.status,
                 table_count=0,
                 view_count=0,
                 created_at=conn.created_at,
                 last_refreshed_at=conn.last_refreshed_at
             )
-            logger.info(f"Successfully added database connection: {name}")
+            logger.info("Successfully added database connection: %s", name)
             return True, "", response
 
     @staticmethod
@@ -125,13 +127,12 @@ class ConnectionService:
                                 table_count += 1
                             elif table.get("table_type") == "VIEW":
                                 view_count += 1
-                    except json.JSONDecodeError:
-                        pass
+                    except json.JSONDecodeError as e:
+                        logger.warning("Failed to parse metadata JSON for connection '%s': %s", conn.name, e)
 
                 responses.append(DatabaseSummaryResponse(
                     name=conn.name,
                     db_type=conn.db_type,
-                    status=conn.status,
                     table_count=table_count,
                     view_count=view_count,
                     created_at=conn.created_at,
@@ -157,7 +158,7 @@ class ConnectionService:
         Returns:
             tuple: (success, error_message)
         """
-        logger.info(f"Deleting database connection: {name}")
+        logger.info("Deleting database connection: %s", name)
         session_maker = get_async_session_maker()
         async with session_maker() as session:
             result = await session.execute(
@@ -169,12 +170,14 @@ class ConnectionService:
 
             await session.delete(conn)
             await session.commit()
-            logger.info(f"Successfully deleted database connection: {name}")
+            logger.info("Successfully deleted database connection: %s", name)
             return True, ""
 
     @staticmethod
     def get_connection_url(url: str) -> str:
-        """Convert URL to asyncpg format for queries."""
+        """Convert URL to async format for queries."""
         if url.startswith("postgresql://"):
             return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if url.startswith("mysql://"):
+            return url.replace("mysql://", "mysql+aiomysql://", 1)
         return url
