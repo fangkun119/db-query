@@ -62,6 +62,7 @@ This phase combines:
 
 - [X] T011 [US1] Add `EXCLUDED_SCHEMAS` dictionary in `backend/app/services/metadata.py` with MySQL system schemas ("mysql", "information_schema", "performance_schema", "sys")
 - [X] T012 [US1] Create `_get_metadata_query()` method in `backend/app/services/metadata.py` that returns MySQL-specific metadata query
+- [X] T012a [US1] Implement MySQL TABLE_COMMENT and COLUMN_COMMENT retrieval in `_get_metadata_query()` method (use information_schema.TABLES.TABLE_COMMENT and information_schema.COLUMNS.COLUMN_COMMENT)
 - [X] T013 [US1] Update `fetch_metadata()` in `backend/app/services/metadata.py` to call `_get_metadata_query(db_type)` with detected database type
 - [X] T014 [US1] Update `fetch_metadata()` in `backend/app/services/metadata.py` to use `async_url` connection helper for MySQL
 
@@ -98,6 +99,7 @@ This phase combines:
 
 - [X] T030 [P] [US2] Verify SQL editor (Monaco) doesn't validate MySQL-specific syntax - should allow typing any SQL
 - [X] T031 [P] [US2] Test query results display MySQL data correctly (number formatting, date formatting, etc.)
+- [X] T030a [P] [US1] Verify schema tree tooltip displays table and column comments for both PostgreSQL and MySQL databases (frontend/src/components/schema/schema-tree.tsx)
 
 ### Testing Tasks
 
@@ -140,6 +142,7 @@ This phase combines:
 - [ ] T044 Run all REST Client tests in `test/rest/postgres.rest` to verify no regression
 - [ ] T045 Perform manual E2E testing: add MySQL DB, query with MySQL SQL, test NL to SQL
 - [ ] T046 Verify database type badge displays correctly in frontend UI
+- [X] T046a Verify schema tree tooltip displays table and column comments when hovering over table and column names
 - [ ] T047 Test error handling: invalid URL, connection failure, SQL syntax error
 - [ ] T048 Clean up any test data created during development
 - [ ] T049 Update constitution to v1.1.0 to officially add MySQL support
@@ -158,11 +161,11 @@ Phase 1 (Setup):
 Phase 2 (Implementation):
   T006, T007, T010, T023, T024 (models - can be parallel)
       ↓
-  T011, T012 (metadata) → T013, T014
+  T011, T012, T012a (metadata) → T013, T014
   T008, T009 (connection) → T015
       ↓
   T016, T017, T018 (query) → T019, T020, T021, T022 (NL to SQL)
-  T026, T027, T028, T029 (frontend UI)
+  T026, T027, T028, T029, T030a (frontend UI)
       ↓
   T032 (REST tests)
       ↓
@@ -182,7 +185,7 @@ Phase 3 (Testing):
 
 The longest path through all phases:
 ```
-T001 → T002 → T003 → T004 → T005 → T006 → T011 → T013 → T015 → T019 → T032 → T042 → T043 → T050
+T001 → T002 → T003 → T004 → T005 → T006 → T011 → T012 → T012a → T013 → T015 → T019 → T032 → T042 → T043 → T050
 ```
 
 Estimated effort: ~25-30 hours for complete implementation

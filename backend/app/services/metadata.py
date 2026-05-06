@@ -39,8 +39,8 @@ class MetadataService:
                     c.column_default,
                     c.ordinal_position,
                     COALESCE(kcu.column_name IS NOT NULL, false) as is_primary_key,
-                    NULL as table_comment,
-                    NULL as column_comment
+                    t.TABLE_COMMENT as table_comment,
+                    c.COLUMN_COMMENT as column_comment
                 FROM information_schema.tables t
                 LEFT JOIN information_schema.columns c
                     ON t.table_schema = c.table_schema

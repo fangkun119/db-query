@@ -77,7 +77,7 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 - **FR-002**: System MUST detect and store the database type (PostgreSQL or MySQL) automatically from the connection URL scheme
 - **FR-003**: System MUST display the database type标识 (PostgreSQL or MySQL) for each database in the database list UI
 - **FR-004**: System MUST support deletion of MySQL database connections, including cleanup of all associated metadata from the local storage
-- **FR-005**: System MUST extract and store metadata from MySQL databases including tables, views, columns, data types, and constraints (both TABLE and VIEW object types are included in schema extraction)
+- **FR-005**: System MUST extract and store metadata from MySQL databases including tables, views, columns, data types, constraints, and comments (both TABLE and VIEW object types are included in schema extraction)
 - **FR-005a**: System MUST provide a manual refresh option for users to update metadata when database schemas change
 - **FR-006**: System MUST query MySQL `information_schema` system tables to obtain MySQL database metadata
 - **FR-007**: System MUST execute SQL queries directly on MySQL databases without performing SQL syntax validation or type checking
@@ -89,6 +89,8 @@ As a data analyst who is not an SQL expert, I want to describe my data needs in 
 - **FR-013**: System MUST store database type persistently in the local storage so that subsequent connections remember whether it's PostgreSQL or MySQL
 - **FR-014**: System MUST support both PostgreSQL and MySQL databases simultaneously in the same session without conflicts or interference
 - **FR-015**: System MUST handle MySQL connection URL format variations including optional port specification, SSL parameters, and different host formats
+- **FR-016**: System MUST extract and display table and column comments from database metadata, showing them via tooltip on hover in the schema tree UI
+- **FR-017**: For MySQL, System MUST retrieve comments from `information_schema.TABLES.TABLE_COMMENT` and `information_schema.COLUMNS.COLUMN_COMMENT`
 
 ### Key Entities
 

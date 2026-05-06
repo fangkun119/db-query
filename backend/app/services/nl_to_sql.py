@@ -118,67 +118,77 @@ Requirements:
    - Use LIKE for pattern matching
    - Use backticks \` for identifiers if needed (table/column names with spaces or keywords)
    - Use DATE() or DATE_FORMAT() for date operations
-4. Table and column names must strictly match the schema above
-5. **Pay close attention to column comments** - they contain business context, foreign key relationships (e.g., "refers to candidates table"), and enum value explanations
-6. Use relationship hints in comments to construct proper JOINs
-7. Think step-by-step before writing SQL:
+   - For date arithmetic: DATE_SUB(NOW(), INTERVAL 1 MONTH), DATE_ADD(NOW(), INTERVAL 1 WEEK)
+   - For boolean: use TRUE/FALSE or 1/0
+4. **CRITICAL**: ONLY use columns and functions that exist in the schema above:
+   - NEVER use STATUS() function - it does not exist in MySQL
+   - NEVER assume a column exists - only use columns explicitly listed in the schema
+   - If you need a column that doesn't exist, either JOIN to a table that has it, or omit that condition
+5. Table and column names must strictly match the schema above (case-sensitive)
+6. **Pay close attention to column comments** - they contain business context, foreign key relationships (e.g., "refers to users table"), and enum value explanations
+7. Use relationship hints in comments to construct proper JOINs
+8. Think step-by-step before writing SQL:
    - Identify which tables are needed
+   - Verify each column exists in the schema
    - Identify relationships between tables (check column comments for "refers to")
    - Identify WHERE conditions
    - Then write the final query
-8. If the question is ambiguous or schema is insufficient:
+9. If the question is ambiguous or schema is insufficient:
    - Still generate best-effort SQL
    - Use explanation field to clarify assumptions made
-9. **CRITICAL**: Always generate COMPLETE, EXECUTABLE SQL:
+10. **CRITICAL**: Always generate COMPLETE, EXECUTABLE SQL:
    - If using WITH/CTE, MUST include the main SELECT statement after the CTE
    - Example: "WITH cte AS (...) SELECT * FROM cte" - NOT just "WITH cte AS (...)"
    - The SQL must be able to run directly in MySQL
-10. Return SQL without Markdown formatting (no ```sql markers)
+11. Return SQL without Markdown formatting (no ```sql markers)
 
 Examples:
 
 Q: Show all users
 A: SELECT * FROM users;
 
-Q: Show users who applied for positions with "Senior" in the title
-A: SELECT DISTINCT u.* FROM users u
-JOIN applications a ON u.id = a.user_id
-JOIN positions p ON a.position_id = p.id
-WHERE p.title LIKE '%Senior%';
+Q: Show user ID, display name, and email for active users
+A: SELECT id, display_name, email FROM users WHERE is_active = 1;
 
-Q: Count applications per position, ordered by count
-A: SELECT p.title, COUNT(a.user_id) as application_count
-FROM positions p
-LEFT JOIN applications a ON p.id = a.position_id
-GROUP BY p.id, p.title
-ORDER BY application_count DESC;
+Q: Count tasks per project, ordered by count
+A: SELECT p.name, COUNT(t.id) as task_count
+FROM projects p
+LEFT JOIN tasks t ON p.id = t.project_id
+GROUP BY p.id, p.name
+ORDER BY task_count DESC;
 
-Q: Show users created after a specific date
-A: SELECT * FROM users WHERE DATE(created_at) > '2024-01-01';
+Q: Show tasks with high priority
+A: SELECT id, title, priority, status FROM tasks WHERE priority = 'critical';
 
-Q: Show application count per position
-A: SELECT p.title, COUNT(a.user_id) as application_count
-FROM positions p
-LEFT JOIN applications a ON p.id = a.position_id
-GROUP BY p.id, p.title;
+Q: Show tasks created after a specific date
+A: SELECT * FROM tasks WHERE DATE(created_at) > '2024-01-01';
 
-Q: List job applications with positions and users from the last 3 weeks
-A: WITH recent_applications AS (
+Q: Show active sprints with project names
+A: SELECT s.id, s.name AS sprint_name, s.status AS sprint_status, p.name AS project_name
+FROM sprints s
+JOIN projects p ON s.project_id = p.id
+WHERE s.status = 'active'
+ORDER BY s.start_date DESC;
+
+Q: List tasks with project names and assignee names from the last week
+A: WITH recent_tasks AS (
     SELECT
-        a.id AS application_id,
-        a.user_id,
-        a.position_id,
-        a.created_at AS applied_date,
-        p.title AS position_title,
-        u.first_name,
-        u.last_name,
-        u.email
-    FROM applications a
-    JOIN users u ON a.user_id = u.id
-    JOIN positions p ON a.position_id = p.id
-    WHERE DATE(a.created_at) >= DATE_SUB(CURDATE(), INTERVAL 3 WEEK)
+        t.id AS task_id,
+        t.title AS task_title,
+        t.status AS task_status,
+        t.priority AS task_priority,
+        p.name AS project_name,
+        u.display_name AS assignee_name,
+        t.created_at
+    FROM tasks t
+    JOIN projects p ON t.project_id = p.id
+    JOIN users u ON t.assignee_id = u.id
+    WHERE t.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)
 )
-SELECT * FROM recent_applications ORDER BY applied_date DESC;
+SELECT * FROM recent_tasks ORDER BY created_at DESC;
+
+Q: List activity logs from the last month
+A: SELECT * FROM activity_logs WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH) ORDER BY created_at DESC;
 
 Now answer the user's question.
 """
