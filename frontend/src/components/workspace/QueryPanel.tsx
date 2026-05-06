@@ -60,8 +60,8 @@ export const QueryPanel: React.FC<QueryPanelProps> = ({
             onChange={(key) => onTabChange(key as 'manual' | 'natural')}
             tabBarStyle={{ fontWeight: 600 }}
             items={[
-              { key: 'manual', label: 'MANUAL SQL', children: null },
-              { key: 'natural', label: 'NATURAL LANGUAGE', children: null },
+              { key: 'manual', label: 'MANUAL SQL' },
+              { key: 'natural', label: 'NATURAL LANGUAGE' },
             ]}
           />
         </div>
