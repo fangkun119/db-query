@@ -14,7 +14,6 @@ Stored in `~/.db_query/db_query.db`. Represents a user-added database connection
 | url | `str` | NOT NULL | Database connection URL (plain text for demo) |
 | db_type | `str` | NOT NULL, default "postgresql" | Database type identifier |
 | metadata_json | `str` (JSON) | nullable | Cached schema metadata as JSON string |
-| status | `str` | default "active" | Connection status: active, error |
 | created_at | `datetime` | NOT NULL, default now | Creation timestamp |
 | last_refreshed_at | `datetime` | nullable | Last metadata refresh timestamp |
 
@@ -25,7 +24,6 @@ CREATE TABLE database_connections (
     url TEXT NOT NULL,
     db_type TEXT NOT NULL DEFAULT 'postgresql',
     metadata_json TEXT,
-    status TEXT NOT NULL DEFAULT 'active',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_refreshed_at TIMESTAMP
 );
@@ -80,7 +78,6 @@ Parsed from `metadata_json`. Represents a database table or view.
 |---|---|---|---|
 | name | `str` | `name` | Connection name |
 | db_type | `str` | `dbType` | Database type |
-| status | `str` | `status` | Connection status |
 | table_count | `int` | `tableCount` | Number of tables |
 | view_count | `int` | `viewCount` | Number of views |
 | created_at | `datetime` | `createdAt` | Creation timestamp |
@@ -92,7 +89,6 @@ Parsed from `metadata_json`. Represents a database table or view.
 |---|---|---|---|
 | name | `str` | `name` | Connection name |
 | db_type | `str` | `dbType` | Database type |
-| status | `str` | `status` | Connection status |
 | tables | `list[TableMetadataResponse]` | `tables` | Tables with column info |
 | created_at | `datetime` | `createdAt` | Creation timestamp |
 | last_refreshed_at | `datetime | None` | `lastRefreshedAt` | Last refresh timestamp |
@@ -128,14 +124,3 @@ Parsed from `metadata_json`. Represents a database table or view.
 2. **SQL queries**: Must pass sqlglot parsing, must be SELECT or UNION only
 3. **LIMIT**: Auto-inject default LIMIT (1000, configurable) if outer query has no LIMIT
 4. **NL prompt**: Must be non-empty string
-
-## State Transitions
-
-```
-DatabaseConnection:
-  [new] → (add URL) → active → (metadata fetch success) → active (with metadata)
-                                → (metadata fetch failure) → error
-  active/error → (delete) → [removed]
-  active → (refresh) → active (updated metadata)
-  active → (connection test failure on use) → error
-```

@@ -27,20 +27,14 @@ vi.mock('@monaco-editor/react', () => ({
         value,
         onChange,
         onMount,
-        options,
-        theme,
-        height,
         defaultLanguage,
       }: {
         value: string
         onChange?: (value: string) => void
         onMount?: (editor: any) => void
-        options?: any
-        theme?: string
-        height?: string
         defaultLanguage?: string
       },
-      ref: any
+      _ref: any
     ) => {
       React.useEffect(() => {
         if (onMount) {
@@ -61,7 +55,7 @@ vi.mock('@monaco-editor/react', () => ({
       return React.createElement('div', {
         'data-testid': 'monaco-editor',
         'data-value': value || '',
-        'data-theme': theme,
+        'data-theme': 'vs-dark',
         'data-language': defaultLanguage,
       })
     }

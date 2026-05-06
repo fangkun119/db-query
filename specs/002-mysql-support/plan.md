@@ -198,7 +198,6 @@ class DatabaseConnection(Base):
 interface DatabaseSummaryResponse {
   name: string;
   dbType: string;        // NEW: "postgresql" | "mysql"
-  status: string;
   tableCount: number;
   viewCount: number;
   createdAt: string;

@@ -128,8 +128,7 @@ class ColumnMetadata(BaseModel):
 class DatabaseSummaryResponse(BaseModel):
     """Summary of a database connection."""
     name: str
-    db_type: str  # NEW FIELD - was missing
-    status: str
+    db_type: str  # "postgresql" | "mysql"
     table_count: int
     view_count: int
     created_at: datetime
@@ -155,8 +154,7 @@ class DatabaseSummaryResponse(BaseModel):
 ```json
 {
   "name": "todo_db",
-  "dbType": "mysql",  // CamelCase for frontend
-  "status": "active",
+  "dbType": "mysql",
   "tableCount": 18,
   "viewCount": 0,
   "createdAt": "2026-05-05T12:00:00Z",
@@ -191,9 +189,6 @@ class DatabaseDetailResponse(BaseModel):
     """Detailed database connection info with metadata."""
     name: str
     db_type: str  # "postgresql" | "mysql"
-    url: str  # Optional: may want to redact password
-    table_count: int
-    view_count: int
     tables: list[TableMetadataResponse]
     created_at: datetime
     last_refreshed_at: Optional[datetime] = None

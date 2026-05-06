@@ -33,7 +33,6 @@ Content-Type: application/json
 {
   "name": "todo_db",
   "dbType": "mysql",
-  "status": "active",
   "tableCount": 18,
   "viewCount": 0,
   "createdAt": "2026-05-05T12:00:00Z",
@@ -85,7 +84,6 @@ GET /api/v1/databases
   {
     "name": "interview_db",
     "dbType": "postgresql",
-    "status": "active",
     "tableCount": 23,
     "viewCount": 2,
     "createdAt": "2026-04-01T10:00:00Z",
@@ -94,7 +92,6 @@ GET /api/v1/databases
   {
     "name": "todo_db",
     "dbType": "mysql",
-    "status": "active",
     "tableCount": 18,
     "viewCount": 0,
     "createdAt": "2026-05-05T12:00:00Z",
@@ -121,7 +118,6 @@ GET /api/v1/databases/{name}
 {
   "name": "todo_db",
   "dbType": "mysql",
-  "status": "active",
   "tableCount": 18,
   "viewCount": 0,
   "tables": [
@@ -315,7 +311,6 @@ Generate a {db_type} SELECT query.
 ```typescript
 interface Database {
   name: string;
-  status: string;
   tableCount: number;
   viewCount: number;
   createdAt: string;
@@ -330,7 +325,6 @@ type DatabaseType = "postgresql" | "mysql";
 interface Database {
   name: string;
   dbType: DatabaseType;
-  status: string;
   tableCount: number;
   viewCount: number;
   createdAt: string;
@@ -410,8 +404,6 @@ DatabaseSummary:
       type: string
     dbType:
       $ref: '#/components/schemas/DatabaseType'
-    status:
-      type: string
     tableCount:
       type: integer
     viewCount:

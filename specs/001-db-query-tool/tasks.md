@@ -69,7 +69,7 @@
 - [X] T021 [P] [US1] Create database form component in `frontend/src/components/database/database-form.tsx` — Ant Design Modal with Input for connection name and Input for PostgreSQL URL, submit calls addDb, error display for connection failures
 - [X] T022 [P] [US1] Create schema tree component in `frontend/src/components/schema/schema-tree.tsx` — Ant Design DirectoryTree displaying tables/views grouped by schema, expand to show column name, data type, nullable badge
 - [X] T023 [US1] Create database workspace component in `frontend/src/components/database/database-workspace.tsx` — IDE-style three-column layout: left panel with DatabaseList and "添加数据库" button, center panel with SchemaTree and refresh button, right panel with editor/results area; **NOTE**: Original plan specified separate pages/ directory, actual implementation uses single-page workspace component (see ADR-001)
-- [X] T024 [US1] Integrate database selection and schema display in `frontend/src/components/database/database-workspace.tsx` — handle database click to show SchemaTree, refresh metadata button with status display; main area reserved for query editor (US2)
+- [X] T024 [US1] Integrate database selection and schema display in `frontend/src/components/database/database-workspace.tsx` — handle database click to show SchemaTree, refresh metadata button; main area reserved for query editor (US2)
 
 **Checkpoint**: User Story 1 complete — can add/delete connections, browse schema metadata, refresh metadata. Fully testable end-to-end.
 

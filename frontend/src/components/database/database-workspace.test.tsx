@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { BrowserRouter } from 'react-router'
 import { DatabaseWorkspace } from './database-workspace'
 import * as api from '../../services/api'
 
@@ -49,12 +48,6 @@ const mockQueryResult = {
   executionTimeMs: 150,
 }
 
-function createTestWrapper() {
-  return ({ children }: { children: React.ReactNode }) => (
-    <BrowserRouter>{children}</BrowserRouter>
-  )
-}
-
 describe('DatabaseWorkspace', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -64,7 +57,7 @@ describe('DatabaseWorkspace', () => {
     it('should show loading state initially', () => {
       vi.mocked(api.listDbs).mockImplementation(() => new Promise(() => {}))
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       expect(screen.getByText(/Loading databases/i)).toBeInTheDocument()
     })
@@ -74,7 +67,7 @@ describe('DatabaseWorkspace', () => {
     it('should display databases after loading', async () => {
       vi.mocked(api.listDbs).mockResolvedValue(mockDatabases)
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText('TEST-DB')).toBeInTheDocument()
@@ -84,7 +77,7 @@ describe('DatabaseWorkspace', () => {
     it('should show empty state when no databases', async () => {
       vi.mocked(api.listDbs).mockResolvedValue([])
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText(/No databases/i)).toBeInTheDocument()
@@ -94,7 +87,7 @@ describe('DatabaseWorkspace', () => {
     it('should have ADD DATABASE button', async () => {
       vi.mocked(api.listDbs).mockResolvedValue([])
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText(/ADD DATABASE/i)).toBeInTheDocument()
@@ -107,7 +100,7 @@ describe('DatabaseWorkspace', () => {
       vi.mocked(api.listDbs).mockResolvedValue(mockDatabases)
       vi.mocked(api.getDb).mockResolvedValue(mockDatabaseDetail)
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText('TEST-DB')).toBeInTheDocument()
@@ -124,7 +117,7 @@ describe('DatabaseWorkspace', () => {
       vi.mocked(api.listDbs).mockResolvedValue(mockDatabases)
       vi.mocked(api.getDb).mockResolvedValue(mockDatabaseDetail)
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText('TEST-DB')).toBeInTheDocument()
@@ -143,7 +136,7 @@ describe('DatabaseWorkspace', () => {
       vi.mocked(api.listDbs).mockResolvedValue(mockDatabases)
       vi.mocked(api.getDb).mockResolvedValue(mockDatabaseDetail)
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText('TEST-DB')).toBeInTheDocument()
@@ -161,7 +154,7 @@ describe('DatabaseWorkspace', () => {
       vi.mocked(api.getDb).mockResolvedValue(mockDatabaseDetail)
       vi.mocked(api.executeQuery).mockResolvedValue(mockQueryResult)
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText('TEST-DB')).toBeInTheDocument()
@@ -185,7 +178,7 @@ describe('DatabaseWorkspace', () => {
       vi.mocked(api.listDbs).mockResolvedValue(mockDatabases)
       vi.mocked(api.getDb).mockResolvedValue(mockDatabaseDetail)
 
-      render(<DatabaseWorkspace />, { wrapper: createTestWrapper() })
+      render(<DatabaseWorkspace />)
 
       await waitFor(() => {
         expect(screen.getByText('TEST-DB')).toBeInTheDocument()

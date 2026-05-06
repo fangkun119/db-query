@@ -133,7 +133,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({ result, loading = fals
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} row${total !== 1 ? 's' : ''}`,
             size: 'small',
-            position: 'bottom',
+            position: ['bottom'] as any,
           }}
           size="small"
           scroll={{ x: 'max-content', y: tableScrollY }}

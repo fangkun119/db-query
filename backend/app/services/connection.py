@@ -132,8 +132,8 @@ class ConnectionService:
                                 table_count += 1
                             elif table.get("table_type") == "VIEW":
                                 view_count += 1
-                    except json.JSONDecodeError:
-                        pass
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to parse metadata JSON for connection '{conn.name}': {e}")
 
                 responses.append(DatabaseSummaryResponse(
                     name=conn.name,

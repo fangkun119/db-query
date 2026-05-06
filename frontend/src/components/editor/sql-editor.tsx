@@ -2,6 +2,9 @@ import React from 'react';
 import Editor from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 
+// Declare monaco global variable for type checking
+declare const monaco: typeof import('monaco-editor');
+
 interface SqlEditorProps {
   value: string;
   onChange: (value: string) => void;

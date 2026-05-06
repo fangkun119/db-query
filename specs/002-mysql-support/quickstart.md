@@ -101,7 +101,6 @@ Response:
 {
   "name": "todo_db",
   "dbType": "mysql",
-  "status": "active",
   "tableCount": 18,
   "viewCount": 0,
   "createdAt": "2026-05-05T12:00:00Z",
@@ -121,7 +120,6 @@ Response should show both databases:
   {
     "name": "interview_db",
     "dbType": "postgresql",
-    "status": "active",
     "tableCount": 23,
     "viewCount": 2,
     "createdAt": "2026-04-01T10:00:00Z",
@@ -130,7 +128,6 @@ Response should show both databases:
   {
     "name": "todo_db",
     "dbType": "mysql",
-    "status": "active",
     "tableCount": 18,
     "viewCount": 0,
     "createdAt": "2026-05-05T12:00:00Z",

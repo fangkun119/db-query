@@ -19,7 +19,6 @@ GET /api/v1/dbs
   {
     "name": "my-postgres",
     "dbType": "postgresql",
-    "status": "active",
     "tableCount": 12,
     "viewCount": 3,
     "createdAt": "2026-04-27T10:00:00Z",
@@ -53,7 +52,6 @@ PUT /api/v1/dbs/{name}
 {
   "name": "my-postgres",
   "dbType": "postgresql",
-  "status": "active",
   "tableCount": 12,
   "viewCount": 3,
   "createdAt": "2026-04-27T10:00:00Z",
@@ -89,7 +87,6 @@ GET /api/v1/dbs/{name}
 {
   "name": "my-postgres",
   "dbType": "postgresql",
-  "status": "active",
   "tables": [
     {
       "schemaName": "public",

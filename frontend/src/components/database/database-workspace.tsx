@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button, Space, Typography, Input, message, Spin, Empty, Tabs, Popover, Modal } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, DatabaseOutlined, TableOutlined, PlayCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import DatabaseList from './database-list';
 import DatabaseForm from './database-form';
 import SchemaTree from '../schema/schema-tree';
@@ -271,7 +271,7 @@ export const DatabaseWorkspace: React.FC = () => {
     resizeStartHeight.current = editorHeight;
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizing) return;
 
     const deltaY = e.clientY - resizeStartY.current;
@@ -283,11 +283,11 @@ export const DatabaseWorkspace: React.FC = () => {
     const clampedHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
 
     setEditorHeight(clampedHeight);
-  };
+  }, [isResizing]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsResizing(false);
-  };
+  }, []);
 
   // Add/remove global event listeners for resize
   useEffect(() => {
@@ -303,7 +303,7 @@ export const DatabaseWorkspace: React.FC = () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing]);
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   const filteredTables = selectedDatabase
     ? selectedDatabase.tables.filter(

@@ -159,7 +159,7 @@ describe('NLInput', () => {
 
   describe('Component Structure', () => {
     it('should have correct styling classes', () => {
-      const { container } = render(<NLInput onGenerate={mockOnGenerate} onExecute={mockOnExecute} />)
+      render(<NLInput onGenerate={mockOnGenerate} onExecute={mockOnExecute} />)
 
       const textarea = screen.getByPlaceholderText(/Ask questions about your data/)
       expect(textarea).toHaveStyle({
